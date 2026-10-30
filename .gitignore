@@ -1,0 +1,32 @@
+# Build results
+bin/
+obj/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio cache/options
+.vs/
+
+local-nuget/
+
+# Visual Studio Code
+.vscode/
+
+# Rider
+.idea/
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+packages/
+
+# Others
+*.log
+*.tmp
+*.temp
+
+FlashCsv.Benchmarks/BenchmarkDotNet.Artifacts/

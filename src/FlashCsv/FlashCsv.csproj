@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <PackageId>FlashCsv</PackageId>
+    <Version>1.0.5-local</Version>
+    <Authors>n.peyrachon</Authors>
+    <Description>Parseur et sérialiseur CSV ultra haute performance, 100% Native AOT.</Description>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlashCsv.Annotations\FlashCsv.Annotations.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\FlashCsv.Core\FlashCsv.Core.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\FlashCsv.Generators\FlashCsv.Generators.csproj" 
+                      OutputItemType="Analyzer" 
+                      ReferenceOutputAssembly="false" 
+                      PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Fichier .props pour forcer le client à charger le générateur comme Analyzer -->
+    <None Include="build\FlashCsv.props" 
+          PackagePath="build\FlashCsv.props"
+          Pack="true" />
+
+    <!-- La DLL du Source Generator -->
+    <None Include="..\FlashCsv.Generators\bin\$(Configuration)\netstandard2.0\FlashCsv.Generators.dll" 
+          PackagePath="analyzers/dotnet/cs" 
+          Pack="true" 
+          Visible="false" />
+  </ItemGroup>
+
+  <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+    </ItemGroup>
+  </Target>
+
+</Project>

@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="src/FlashCsv.Generators/FlashCsv.Generators.csproj" />
+  <Project Path="src/FlashCsv.Core/FlashCsv.Core.csproj" />
+  <Project Path="test/FlashCsv.Tests/FlashCsv.Tests.csproj" />
+  <Project Path="src/FlashCsv.Annotations/FlashCsv.Annotations.csproj" />
+  <Project Path="FlashCsv.Benchmarks/FlashCsv.Benchmarks.csproj" />
+</Solution>
