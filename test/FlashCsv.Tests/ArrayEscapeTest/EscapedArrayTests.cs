@@ -51,7 +51,7 @@ public class EscapedArrayTests
         using var readStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
         var items = new List<EscapedArrayRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<EscapedArrayRecord>(readStream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<EscapedArrayRecord>(readStream))
         {
             items.Add(row);
         }
@@ -80,7 +80,7 @@ public class EscapedArrayTests
         using var readStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
         var items = new List<ArrayAndAllowedRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<ArrayAndAllowedRecord>(readStream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<ArrayAndAllowedRecord>(readStream))
         {
             items.Add(row);
         }
@@ -114,7 +114,7 @@ public class EscapedArrayTests
         };
 
         var items = new List<ArrayAndAllowedRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<ArrayAndAllowedRecord>(readStream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<ArrayAndAllowedRecord>(readStream, options))
         {
             items.Add(row);
         }

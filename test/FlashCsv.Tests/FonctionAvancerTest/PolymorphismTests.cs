@@ -41,7 +41,7 @@ public class PolymorphismTests
         var items = new List<VehicleRecord>();
 
         // On parse en demandant le type de base abstrait !
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<VehicleRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<VehicleRecord>(stream))
         {
             items.Add(row);
         }

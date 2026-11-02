@@ -37,7 +37,7 @@ public class MinMaxTests
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
         var list = new List<MinMaxRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<MinMaxRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<MinMaxRecord>(stream))
         {
             list.Add(row);
         }
@@ -65,7 +65,7 @@ public class MinMaxTests
         };
 
         var list = new List<MinMaxRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<MinMaxRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<MinMaxRecord>(stream, options))
         {
             list.Add(row);
         }
@@ -93,7 +93,7 @@ public class MinMaxTests
         };
 
         var list = new List<MinMaxRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<MinMaxRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<MinMaxRecord>(stream, options))
         {
             list.Add(row);
         }

@@ -45,7 +45,7 @@ public class AdvancedFeaturesTests
         using var readStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
         var items = new List<AutoAliasAndRowRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<AutoAliasAndRowRecord>(readStream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<AutoAliasAndRowRecord>(readStream))
         {
             items.Add(row);
         }
@@ -77,7 +77,7 @@ public class AdvancedFeaturesTests
         using var readStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv));
         var items = new List<ExtensionDataRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<ExtensionDataRecord>(readStream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<ExtensionDataRecord>(readStream))
         {
             items.Add(row);
         }

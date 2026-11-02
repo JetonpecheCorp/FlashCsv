@@ -26,7 +26,7 @@ public class CsvDataReaderTests
         await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
 
         // 1. Création du flux asynchrone
-        var asyncEnumerable = FlashCsvSerializer.ReadAllAsync<DbPersonRecord>(stream);
+        var asyncEnumerable = FlashCsvSerializer.DeserializeAsync<DbPersonRecord>(stream);
 
         // 2. Wrap dans le DbDataReader
         await using var reader = new CsvDataReader<DbPersonRecord>(asyncEnumerable);

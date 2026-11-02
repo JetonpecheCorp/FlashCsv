@@ -32,7 +32,7 @@ public class RegexTest
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
         var list = new List<ContactRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<ContactRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<ContactRecord>(stream))
         {
             list.Add(row);
         }
@@ -59,7 +59,7 @@ public class RegexTest
         };
 
         var list = new List<ContactRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<ContactRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<ContactRecord>(stream, options))
         {
             list.Add(row);
         }
@@ -88,7 +88,7 @@ public class RegexTest
         };
 
         var list = new List<ContactRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<ContactRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<ContactRecord>(stream, options))
         {
             list.Add(row);
         }

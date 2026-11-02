@@ -19,8 +19,7 @@ public static class FlashCsvSerializer
     /// <param name="leaveOpen">Indique si le flux source doit rester ouvert après la lecture (<c>false</c> par défaut).</param>
     /// <param name="cancellationToken">Jeton permettant d'annuler l'opération asynchrone.</param>
     /// <returns>Un flux asynchrone (<see cref="IAsyncEnumerable{T}"/>) permettant de traiter les lignes une par une.</returns>
-    /// <exception cref="InvalidDataException">Levée si le flux contient des données invalides et que le mode est défini sur FailFast.</exception>
-    public static async IAsyncEnumerable<T> ReadAllAsync<T>(
+    public static async IAsyncEnumerable<T> DeserializeAsync<T>(
         Stream stream,
         CsvReaderOptions? options = null,
         bool leaveOpen = false,
@@ -54,15 +53,15 @@ public static class FlashCsvSerializer
                 {
                     if (error.Code == CsvErrorCode.None) continue;
 
+                    // 1. Transmet systématiquement l'erreur au délégué OnError s'il est configuré
                     options.OnError?.Invoke(error);
 
+                    // 2. Si le mode est CollectAndContinue, on passe à la ligne suivante
                     if (options.ErrorMode == CsvErrorMode.CollectAndContinue)
                         continue;
 
-                    if (options.ErrorMode == CsvErrorMode.FailFast)
-                        yield break;
-
-                    throw new InvalidDataException($"Erreur FlashCsv ({error.Code}) à la ligne {error.LineNumber} sur la colonne '{error.ColumnName}'.");
+                    // 3. Sinon (FailFast), on termine immédiatement le flux sans lever d'exception
+                    yield break;
                 }
 
                 yield return item;
@@ -186,7 +185,7 @@ public static class FlashCsvSerializer
         if (utf8Csv.IsEmpty) return [];
         await using var ms = new MemoryStream(utf8Csv.ToArray());
         var list = new List<T>();
-        await foreach (var item in ReadAllAsync<T>(ms, options, false, cancellationToken).ConfigureAwait(false)) list.Add(item);
+        await foreach (var item in DeserializeAsync<T>(ms, options, false, cancellationToken).ConfigureAwait(false)) list.Add(item);
         return list;
     }
 

@@ -75,7 +75,7 @@ public class FormulaAndFlattenTests
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
         var list = new List<CustomerOrderRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<CustomerOrderRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<CustomerOrderRecord>(stream))
         {
             list.Add(row);
         }

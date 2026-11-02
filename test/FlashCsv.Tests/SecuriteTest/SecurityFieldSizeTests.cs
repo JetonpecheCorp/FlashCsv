@@ -33,7 +33,7 @@ public class SecurityFieldSizeTests
         };
 
         var list = new List<DocumentRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<DocumentRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<DocumentRecord>(stream, options))
         {
             list.Add(row);
         }

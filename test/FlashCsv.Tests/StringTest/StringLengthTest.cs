@@ -36,7 +36,7 @@ public class StringLengthTest
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
         var list = new List<CustomerRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<CustomerRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<CustomerRecord>(stream))
         {
             list.Add(row);
         }
@@ -68,7 +68,7 @@ public class StringLengthTest
         };
 
         var list = new List<CustomerRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<CustomerRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<CustomerRecord>(stream, options))
         {
             list.Add(row);
         }
@@ -96,7 +96,7 @@ public class StringLengthTest
         };
 
         var list = new List<CustomerRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<CustomerRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<CustomerRecord>(stream, options))
         {
             list.Add(row);
         }

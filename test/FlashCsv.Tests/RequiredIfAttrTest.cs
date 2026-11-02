@@ -24,7 +24,7 @@ public class RequiredIfAttrTest
         };
 
         var list = new List<OrderRecord>();
-        await foreach (var item in FlashCsvSerializer.ReadAllAsync<OrderRecord>(stream, options))
+        await foreach (var item in FlashCsvSerializer.DeserializeAsync<OrderRecord>(stream, options))
         {
             list.Add(item);
         }
@@ -47,7 +47,7 @@ public class RequiredIfAttrTest
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
 
         var list = new List<OrderRecord>();
-        await foreach (var item in FlashCsvSerializer.ReadAllAsync<OrderRecord>(stream))
+        await foreach (var item in FlashCsvSerializer.DeserializeAsync<OrderRecord>(stream))
         {
             list.Add(item);
         }
@@ -76,7 +76,7 @@ public class RequiredIfAttrTest
         };
 
         var list = new List<OrderRecord>();
-        await foreach (var item in FlashCsvSerializer.ReadAllAsync<OrderRecord>(stream, options))
+        await foreach (var item in FlashCsvSerializer.DeserializeAsync<OrderRecord>(stream, options))
         {
             list.Add(item);
         }
@@ -99,7 +99,7 @@ public class RequiredIfAttrTest
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
 
         var list = new List<OrderRecord>();
-        await foreach (var item in FlashCsvSerializer.ReadAllAsync<OrderRecord>(stream))
+        await foreach (var item in FlashCsvSerializer.DeserializeAsync<OrderRecord>(stream))
         {
             list.Add(item);
         }

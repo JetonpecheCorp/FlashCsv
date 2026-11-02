@@ -27,7 +27,7 @@ public class ExtraColumnsTests
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
         var list = new List<StrictUserRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<StrictUserRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<StrictUserRecord>(stream))
         {
             list.Add(row);
         }
@@ -56,7 +56,7 @@ public class ExtraColumnsTests
         };
 
         var list = new List<StrictUserRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<StrictUserRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<StrictUserRecord>(stream, options))
         {
             list.Add(row);
         }

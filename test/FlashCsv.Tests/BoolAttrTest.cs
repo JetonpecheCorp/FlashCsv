@@ -18,7 +18,7 @@ public class BoolAttrTest
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
 
         var rows = new List<CustomBoolRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<CustomBoolRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<CustomBoolRecord>(stream))
         {
             rows.Add(row);
         }
@@ -50,7 +50,7 @@ public class BoolAttrTest
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
 
         var rows = new List<CustomBoolRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<CustomBoolRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<CustomBoolRecord>(stream))
         {
             rows.Add(row);
         }
@@ -80,7 +80,7 @@ public class BoolAttrTest
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
 
         var rows = new List<FeatureRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<FeatureRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<FeatureRecord>(stream))
         {
             rows.Add(row);
         }
@@ -111,7 +111,7 @@ public class BoolAttrTest
         };
 
         var rows = new List<CustomBoolRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<CustomBoolRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<CustomBoolRecord>(stream, options))
         {
             rows.Add(row);
         }

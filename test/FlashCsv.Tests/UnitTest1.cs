@@ -20,7 +20,7 @@ public class UnitTest1
 
         // Lecture fluide via IAsyncEnumerable
         var users = new List<UserRecord>();
-        await foreach (var user in FlashCsvSerializer.ReadAllAsync<UserRecord>(inputStream))
+        await foreach (var user in FlashCsvSerializer.DeserializeAsync<UserRecord>(inputStream))
         {
             users.Add(user);
         }
@@ -69,7 +69,7 @@ public class UnitTest1
 
         // 3. Lecture via l'API simplifiée FlashCsvSerializer
         var records = new List<WideRecord>();
-        await foreach (var item in FlashCsvSerializer.ReadAllAsync<WideRecord>(stream))
+        await foreach (var item in FlashCsvSerializer.DeserializeAsync<WideRecord>(stream))
         {
             records.Add(item);
         }
@@ -108,7 +108,7 @@ public class UnitTest1
             }
         };
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<UserRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<UserRecord>(stream, options))
         {
             validRows.Add(row);
         }
@@ -147,7 +147,7 @@ public class UnitTest1
             }
         };
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<UserRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<UserRecord>(stream, options))
         {
             validRows.Add(row);
         }

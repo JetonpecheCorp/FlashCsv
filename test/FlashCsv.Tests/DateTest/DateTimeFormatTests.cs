@@ -40,7 +40,7 @@ public class DateTimeFormatTests
         };
 
         var results = new List<EventRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<EventRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<EventRecord>(stream, options))
         {
             results.Add(row);
         }
@@ -65,7 +65,7 @@ public class DateTimeFormatTests
         var options = new CsvReaderOptions(); // Aucun format global
 
         var results = new List<EventRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<EventRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<EventRecord>(stream, options))
         {
             results.Add(row);
         }

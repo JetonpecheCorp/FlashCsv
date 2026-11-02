@@ -37,7 +37,7 @@ public class RangeValidationTests
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
         var list = new List<UserAgeRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<UserAgeRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<UserAgeRecord>(stream))
         {
             list.Add(row);
         }
@@ -68,7 +68,7 @@ public class RangeValidationTests
         };
 
         var list = new List<UserAgeRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<UserAgeRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<UserAgeRecord>(stream, options))
         {
             list.Add(row);
         }
@@ -97,7 +97,7 @@ public class RangeValidationTests
         };
 
         var list = new List<UserAgeRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<UserAgeRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<UserAgeRecord>(stream, options))
         {
             list.Add(row);
         }

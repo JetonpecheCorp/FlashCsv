@@ -33,7 +33,7 @@ public class HtmlSanitizerTests
         await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
         var list = new List<FeedbackRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<FeedbackRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<FeedbackRecord>(stream))
         {
             list.Add(row);
         }

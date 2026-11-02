@@ -63,7 +63,7 @@ public class CsvOrderTests
         var options = new CsvReaderOptions { HasHeader = false };
 
         var list = new List<OrderedRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<OrderedRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<OrderedRecord>(stream, options))
         {
             list.Add(row);
         }

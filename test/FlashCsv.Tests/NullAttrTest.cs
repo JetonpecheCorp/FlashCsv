@@ -18,7 +18,7 @@ public class NullAttrTest
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
 
         var rows = new List<NullValuesRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<NullValuesRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<NullValuesRecord>(stream))
         {
             rows.Add(row);
         }
@@ -57,7 +57,7 @@ public class NullAttrTest
         };
 
         var rows = new List<NullValuesRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<NullValuesRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<NullValuesRecord>(stream, options))
         {
             rows.Add(row);
         }

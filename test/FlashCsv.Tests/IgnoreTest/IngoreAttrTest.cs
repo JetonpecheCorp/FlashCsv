@@ -19,7 +19,7 @@ public class IngoreAttrTest
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
         var list = new List<AccountRecord>();
 
-        await foreach (var item in FlashCsvSerializer.ReadAllAsync<AccountRecord>(stream))
+        await foreach (var item in FlashCsvSerializer.DeserializeAsync<AccountRecord>(stream))
         {
             list.Add(item);
         }
@@ -40,7 +40,7 @@ public class IngoreAttrTest
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
         var list = new List<AccountRecord>();
 
-        await foreach (var item in FlashCsvSerializer.ReadAllAsync<AccountRecord>(stream))
+        await foreach (var item in FlashCsvSerializer.DeserializeAsync<AccountRecord>(stream))
         {
             list.Add(item);
         }

@@ -21,7 +21,7 @@ public class DoubleParseTest
         var options = new CsvReaderOptions { Delimiter = ';' };
         var rows = new List<PriceRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<PriceRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<PriceRecord>(stream, options))
         {
             rows.Add(row);
         }
@@ -51,7 +51,7 @@ public class DoubleParseTest
         };
 
         var rows = new List<PriceRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<PriceRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<PriceRecord>(stream, options))
         {
             rows.Add(row);
         }

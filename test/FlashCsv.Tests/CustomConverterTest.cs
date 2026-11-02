@@ -19,7 +19,7 @@ public class CustomConverterTest
 
         // 2. Lecture et désérialisation via ICsvFieldReader
         var products = new List<ProductRecord>();
-        await foreach (var item in FlashCsvSerializer.ReadAllAsync<ProductRecord>(inputStream))
+        await foreach (var item in FlashCsvSerializer.DeserializeAsync<ProductRecord>(inputStream))
         {
             products.Add(item);
         }
@@ -64,7 +64,7 @@ public class CustomConverterTest
         };
 
         var list = new List<ProductRecord>();
-        await foreach (var item in FlashCsvSerializer.ReadAllAsync<ProductRecord>(inputStream, options))
+        await foreach (var item in FlashCsvSerializer.DeserializeAsync<ProductRecord>(inputStream, options))
         {
             list.Add(item);
         }

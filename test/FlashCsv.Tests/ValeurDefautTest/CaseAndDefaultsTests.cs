@@ -41,7 +41,7 @@ public class CaseAndDefaultsTests
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
         var list = new List<DefaultUserRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<DefaultUserRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<DefaultUserRecord>(stream))
         {
             list.Add(row);
         }
@@ -83,7 +83,7 @@ public class CaseAndDefaultsTests
         };
 
         var list = new List<DefaultUserRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<DefaultUserRecord>(readStream, readerOptions))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<DefaultUserRecord>(readStream, readerOptions))
         {
             list.Add(row);
         }

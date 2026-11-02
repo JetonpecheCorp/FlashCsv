@@ -36,7 +36,7 @@ public class GlobalHtmlSanitizerTests
         };
 
         var list = new List<PlainArticleRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<PlainArticleRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<PlainArticleRecord>(stream, options))
         {
             list.Add(row);
         }
@@ -57,7 +57,7 @@ public class GlobalHtmlSanitizerTests
         var options = new CsvReaderOptions(); // DefaultHtmlSanitizeMode est null par défaut
 
         var list = new List<PlainArticleRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<PlainArticleRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<PlainArticleRecord>(stream, options))
         {
             list.Add(row);
         }

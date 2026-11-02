@@ -32,7 +32,7 @@ public class I18nTests
         using var streamFr = new MemoryStream(Encoding.UTF8.GetBytes(csvFr));
         var items = new List<I18nRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<I18nRecord>(streamFr))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<I18nRecord>(streamFr))
         {
             items.Add(row);
         }
@@ -108,7 +108,7 @@ public class I18nTests
 
         var items = new List<I18nRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<I18nRecord>(streamEs, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<I18nRecord>(streamEs, options))
         {
             items.Add(row);
         }

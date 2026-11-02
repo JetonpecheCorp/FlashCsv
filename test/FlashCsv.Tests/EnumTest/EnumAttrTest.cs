@@ -17,7 +17,7 @@ public class EnumAttrTest
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
         var list = new List<OrderStatusRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<OrderStatusRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<OrderStatusRecord>(stream))
         {
             list.Add(row);
         }
@@ -54,7 +54,7 @@ public class EnumAttrTest
         };
 
         var list = new List<OrderStatusRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<OrderStatusRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<OrderStatusRecord>(stream, options))
         {
             list.Add(row);
         }

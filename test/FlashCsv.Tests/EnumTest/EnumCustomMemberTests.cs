@@ -19,7 +19,7 @@ public class EnumCustomMemberTests
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
         var results = new List<TaskRecord>();
 
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<TaskRecord>(stream))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<TaskRecord>(stream))
         {
             results.Add(row);
         }
@@ -85,7 +85,7 @@ public class EnumCustomMemberTests
         };
 
         var results = new List<TaskRecord>();
-        await foreach (var row in FlashCsvSerializer.ReadAllAsync<TaskRecord>(stream, options))
+        await foreach (var row in FlashCsvSerializer.DeserializeAsync<TaskRecord>(stream, options))
         {
             results.Add(row);
         }
