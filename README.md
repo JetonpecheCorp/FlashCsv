@@ -758,31 +758,106 @@ public partial record struct Commande
 
 ### 3. Polymorphisme et types dérivés
 
-Pour désérialiser une séquence d'enregistrements hétérogènes partageant une même classe de base :
+Un fichier CSV ne contient généralement qu'un seul type d'objet par fichier (ex: une liste de clients).  
+Cependant, dans de nombreux systèmes réels (fichiers bancaires, journaux d'audit, imports ERP), **un même fichier CSV mélange plusieurs types d'enregistrements différents**.  
+Considérez ce relevé bancaire où chaque ligne représente une opération, mais avec des informations différentes selon la nature de l'opération :
+
+```txt
+type_mouvement,id,montant,banque_origine,destinataire
+CREDIT,101,150.00,BNP Paribas,
+DEBIT,102,42.50,,Amazon
+CREDIT,103,1200.00,Société Générale,
+```
+
+- Une ligne `CREDIT` possède une propriété `banque_origine`.
+- Une ligne `DEBIT` possède une propriété `destinataire`.
+
+En C# standard, vouloir désérialiser ce fichier vers une classe unique forcerait à créer une classe "fourre-tout" pleine de propriétés nullables.
+
+Grâce à `[CsvDiscriminator]` et `[CsvDerivedType]`, FlashCsv inspecte la colonne discriminante (ici `type_mouvement`) et instancie automatiquement la classe fille correspondante, le tout sans réflexion et compatible Native AOT.
 
 ```csharp
 using FlashCsv.Annotations;
 
+// On définit une classe ou un record de base abstract, puis les classes dérivées concrètes.
+
+// 1. Classe de base commune
 [CsvSerializable]
-[CsvDiscriminator("type_mouvement")]
-[CsvDerivedType(typeof(Versement), "CREDIT")]
-[CsvDerivedType(typeof(Retrait), "DEBIT")]
+[CsvDiscriminator("type_mouvement")] // Nom de la colonne qui indique le type de la ligne
+[CsvDerivedType(typeof(Versement), "CREDIT")] // Si la valeur vaut "CREDIT" => instancie Versement
+[CsvDerivedType(typeof(Retrait), "DEBIT")]    // Si la valeur vaut "DEBIT"  => instancie Retrait
 public abstract partial record MouvementBancaire
 {
+    [CsvName("id")]
     public long Id { get; init; }
+
+    [CsvName("montant")]
     public decimal Montant { get; init; }
 }
 
+// 2. Première variante concrète
 public partial record Versement : MouvementBancaire
 {
-    public string Origine { get; init; } = "";
+    [CsvName("banque_origine")]
+    public string BanqueOrigine { get; init; } = "";
 }
 
+// 3. Deuxième variante concrète
 public partial record Retrait : MouvementBancaire
 {
-    public string Beneficiaire { get; init; } = "";
+    [CsvName("destinataire")]
+    public string Destinataire { get; init; } = "";
 }
 ```
+
+#### 1. Lecture du flux (Désérialisation)
+Lors du parcours du fichier avec `DeserializeAsync<MouvementBancaire>`, FlashCsv retourne des instances typées que vous pouvez inspecter avec du pattern matching C# standard (`switch` / `is`) :
+
+```cs
+using FlashCsv.Core;
+
+await using var stream = File.OpenRead("releve_operations.csv");
+
+await foreach (MouvementBancaire mouvement in FlashCsvSerializer.DeserializeAsync<MouvementBancaire>(stream))
+{
+    switch (mouvement)
+    {
+        case Versement credit:
+            Console.WriteLine($"[+ CRÉDIT] #{credit.Id} de {credit.Montant} € reçu depuis {credit.BanqueOrigine}");
+            break;
+
+        case Retrait debit:
+            Console.WriteLine($"[- DÉBIT]  #{debit.Id} de {debit.Montant} € payé à {debit.Destinataire}");
+            break;
+    }
+}
+
+/* Sortie:
+* [+ CRÉDIT] #101 de 150.00 € reçu depuis BNP Paribas
+* [- DÉBIT]  #102 de 42.50 € payé à Amazon
+* [+ CRÉDIT] #103 de 1200.00 € reçu depuis Société Générale
+*/
+```
+
+#### 2. Écriture du flux (Sérialisation)
+À l'écriture, FlashCsv détecte automatiquement le type réel de chaque objet dans la liste hétérogène, renseigne automatiquement la colonne discriminante (`CREDIT` ou `DEBIT`) et écrit les colonnes spécifiques :
+
+```cs
+var operations = new MouvementBancaire[]
+{
+    new Versement { Id = 101, Montant = 150.00m, BanqueOrigine = "BNP Paribas" },
+    new Retrait   { Id = 102, Montant = 42.50m, Destinataire = "Amazon" }
+};
+
+string csvSortie = FlashCsvSerializer.SerializeToString(operations);
+```
+
+#### Points importants à retenir
+- **Zéro réflexion au runtime** : Le discriminateur est inspecté à l'aide d'un automate généré à la compilation par Roslyn, ce qui conserve les mêmes performances qu'un modèle plat.
+
+- **Sécurité à la lecture** : Si une ligne contient une valeur de discriminant inconnue (ex: `"VIREMENT"` alors que seuls `"CREDIT"` et `"DEBIT"` sont déclarés), une erreur `UnknownDiscriminator` est transmise directement au gestionnaire `OnError`.
+
+- **Les types enfants doivent être `partial`** pour permettre au générateur de lier leurs propriétés au schéma d'en-tête global.
 
 ### 4. Règles conditionnelles sans allocation (`ICsvCondition<T>`)
 
