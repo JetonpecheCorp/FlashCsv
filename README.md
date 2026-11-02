@@ -1255,7 +1255,7 @@ var writerOptions = new CsvWriterOptions
     FormatHeader = nom => nom.ToUpperInvariant() // Écrit tous les en-têtes en MAJUSCULES
 };
 
-// leaveOpen: true pour pouvoir inspecter outputStream ensuite sans System.ObjectDisposedException[cite: 1]
+// leaveOpen: true pour pouvoir inspecter outputStream ensuite sans System.ObjectDisposedException
 await FlashCsvSerializer.SerializeAsync(outputStream, operationsValides, writerOptions, leaveOpen: true);
 ```
 
