@@ -44,7 +44,8 @@
 11. [Référence complète des Options](#️-référence-complète-des-options)
     * [`CsvReaderOptions`](#csvreaderoptions-lecture)
     * [`CsvWriterOptions`](#csvwriteroptions-écriture)
-12. [Licence](#licence)
+12. [Exemple ultime](#lexemple-ultime-all-in-one)
+13. [Licence](#licence)
 
 ## Pourquoi choisir FlashCsv ?
 
@@ -1039,6 +1040,243 @@ public async Task Roundtrip_Memoire_ShouldPreserveData()
 | `BufferSize` | `int` | `64 Ko` | Taille du buffer tampon avant vidage (`Flush`) vers le flux de destination. |
 | `WriteBom` | `bool` | `false` | Écrit le BOM UTF-8 au début du fichier pour garantir la compatibilité des accents sous Microsoft Excel. |
 | `TransformField` | `Func<string, string, string>?` | `null` | Fonction globale de transformation appliquée aux cellules textuelles avant écriture : `(nomColonne, valeurSource) => valeurModifiée`. |
+
+## L'Exemple Ultime (All-in-One)
+
+Voici un scénario métier complet regroupant l'ensemble des fonctionnalités clés de FlashCsv dans un cas d'usage réel : **un journal d'opérations e-commerce internationales avec gestion d'erreurs, Native AOT et zéro allocation**.
+
+### 1. Le Modèle C# Complet
+
+```csharp
+using System.Buffers.Text;
+using System.Text.Json.Serialization;
+using FlashCsv.Annotations;
+using FlashCsv.Core;
+
+namespace MonApplication.Exports;
+
+// A. Sous-objet aplati (Niveau 2 et 3)
+public partial record struct CoordonneesGps
+{
+    [CsvName("lat")]
+    public double Latitude { get; init; }
+
+    [CsvName("lon")]
+    public double Longitude { get; init; }
+}
+
+public partial record struct AdresseLivraison
+{
+    [CsvName("ville")]
+    public string Ville { get; init; }
+
+    // Sous-sous-objet aplati en cascade (colonnes: "livraison_gps_lat", "livraison_gps_lon")
+    [CsvFlatten("gps_")]
+    public CoordonneesGps Position { get; init; }
+}
+
+// B. Sous-objets complexes JSON (Native AOT)
+public record struct ArticlePanier(string Sku, int Quantite);
+
+[JsonSerializable(typeof(List<ArticlePanier>))]
+public partial class PanierJsonContext : JsonSerializerContext { }
+
+// C. Condition métier sans allocation
+public readonly struct EstProfessionnelCondition : ICsvCondition<OperationCommerciale>
+{
+    public static bool IsSatisfied(in OperationCommerciale op) => op.EstSociete;
+}
+
+// D. Convertisseur binaire ultra-rapide sans allocation
+public sealed class EuroMontantReader : ICsvFieldReader<int>
+{
+    public static bool TryParse(ReadOnlySpan<byte> source, out int value, out CsvErrorCode errorCode)
+    {
+        // Enlève le symbole "€" en fin de chaîne s'il existe
+        if (source.EndsWith("€"u8))
+            source = source[..^3];
+
+        if (Utf8Parser.TryParse(source, out value, out int consumed) && consumed == source.Length)
+        {
+            errorCode = CsvErrorCode.None;
+            return true;
+        }
+
+        value = 0;
+        errorCode = CsvErrorCode.InvalidInteger;
+        return false;
+    }
+}
+
+// E. Énumération personnalisée
+public enum StatutLivraison
+{
+    [CsvEnumMemberName("EN_ATTENTE", "ATTENTE", "PENDING")]
+    EnAttente,
+
+    [CsvEnumMemberName("EXPEDIE", "LIVRE", "SHIPPED")]
+    Expedie
+}
+
+// F. Le Modèle Racine
+[CsvSerializable]
+public partial record struct OperationCommerciale
+{
+    // Métadonnées & numérotation automatique
+    [CsvRowNumber]
+    public int LigneFichier { get; init; }
+
+    // Alias & validation stricte
+    [CsvName("id_commande", "reference", "ref")]
+    [CsvRequired]
+    public int Id { get; init; }
+
+    [CsvName("email_client")]
+    [CsvPattern(@"^[^@\s]+@[^@\s]+\.[^@\s]+$")]
+    [CsvSanitizeHtml(HtmlSanitizeMode.StripTags)] // Assainit le contenu HTML injecté
+    public string Email { get; init; }
+
+    // Convertisseur binaire sur mesure ("250€" -> 250)
+    [CsvName("total_commande")]
+    [CsvConverter<EuroMontantReader>]
+    public int MontantTotal { get; init; }
+
+    // Booléen tolérant plusieurs formats
+    [CsvBoolean(["OUI", "TRUE", "1"], ["NON", "FALSE", "0"])]
+    public bool EstSociete { get; init; }
+
+    // Validation conditionnelle : obligatoire UNIQUEMENT si EstSociete == true
+    [CsvRequiredIf<EstProfessionnelCondition>]
+    public string? NumeroTva { get; init; }
+
+    // Énumération avec alias
+    [CsvEnum(CsvEnumFormat.Name)]
+    public StatutLivraison Statut { get; init; }
+
+    // Tableau de valeurs textuelles avec caractère d'échappement pour les virgules
+    [CsvDelimiterArray(delimiter: ',', escapeChar: '\\')]
+    public string[] Tags { get; init; }
+
+    // Données JSON directes AOT
+    [CsvJson("articles_json", JsonSourceGenContext = typeof(PanierJsonContext))]
+    public List<ArticlePanier> Articles { get; init; }
+
+    // Sous-objet aplati avec préfixe
+    [CsvFlatten("livraison_")]
+    public AdresseLivraison Livraison { get; init; }
+
+    // Sécurité contre l'exécution de formules Excel (=SOMME, +cmd, etc.)
+    [CsvSanitizeFormula]
+    public string CommentaireClient { get; init; }
+
+    // Capture des colonnes inconnues ou imprévues
+    [CsvExtensionData]
+    public Dictionary<string, string>? MetaDonneesInconnues { get; init; }
+}
+```
+
+### 2. Le Fichier CSV Entrant (avec BOM UTF-8)
+Ce fichier simule un export Excel contenant des particularités réelles :
+- Préfixe BOM UTF-8 en tête de flux   
+- Un élément échappé dans les tags (`"urgent\, prioritaire"`)
+- Des cellules JSON avec guillemets RFC 4180
+- Une formule malveillante dans le commentaire (`=1+1`)
+- Une colonne non prévue (`date_creation_externe`)
+- Une ligne corrompue (Ligne 3 : montant textuel invalide)
+
+```txt
+reference,email_client,total_commande,EstSociete,NumeroTva,Statut,Tags,articles_json,livraison_ville,livraison_gps_lat,livraison_gps_lon,CommentaireClient,date_creation_externe
+101,<b>alice@test.com</b>,250€,1,FR123456789,LIVRE,"urgent\, prioritaire,fragile","[{""Sku"":""CLAVIER"",""Quantite"":1}]",Lyon,45.7640,4.8357,=1+1,2026-11-02
+102,bob@domaine.com,ERREUR_MONTANT,0,,ATTENTE,"promo","[]",Paris,48.8566,2.3522,Normal,2026-11-02
+103,charlie@pro.com,990€,OUI,FR987654321,SHIPPED,"express","[{""Sku"":""ECRAN"",""Quantite"":2}]",Marseille,43.2965,5.3698,RAS,2026-11-02
+```
+
+### 3. Exécution : Lecture, Résilience et Réécriture
+
+```cs
+using System.Text;
+using FlashCsv.Core;
+
+// Simulation d'un fichier avec BOM UTF-8
+byte[] bom = [0xEF, 0xBB, 0xBF];
+byte[] rawBytes = Encoding.UTF8.GetBytes(csvContenuBrut);
+byte[] streamBytes = [..bom, ..rawBytes];
+
+using var inputStream = new MemoryStream(streamBytes);
+
+// 1. CONFIGURATION DE LECTURE ROBUSTE
+var readerOptions = new CsvReaderOptions
+{
+    DetectAndSkipBom = true,                     // Ignore le BOM Excel transparent
+    ErrorMode = CsvErrorMode.CollectAndContinue, // Ne plante pas sur la ligne de Bob (Ligne 3)
+    OnError = err =>
+    {
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine($"[Ligne {err.LineNumber}] Champ '{err.ColumnName}' invalide ({err.Code}) -> Ligne ignorée.");
+        Console.ResetColor();
+    },
+    // Mapping dynamique si les en-têtes changent au runtime
+    ColumnMapping = new()
+    {
+        ["Id"] = "reference" // Prime sur les noms et alias du code C#
+    },
+    // Normalisation à la volée
+    TransformField = (colonne, valeur) =>
+    {
+        if (colonne == "email_client") return valeur.Trim().ToLowerInvariant();
+        return valeur;
+    }
+};
+
+// Désérialisation en streaming continu
+var operationsValides = new List<OperationCommerciale>();
+
+await foreach (var op in FlashCsvSerializer.DeserializeAsync<OperationCommerciale>(inputStream, readerOptions))
+{
+    operationsValides.Add(op);
+
+    Console.WriteLine($"Commande #{op.Id} (Ligne {op.LigneFichier}) :");
+    Console.WriteLine($"   • Client       : {op.Email} (TVA: {op.NumeroTva ?? "N/A"})");
+    Console.WriteLine($"   • Total parsé  : {op.MontantTotal} €");
+    Console.WriteLine($"   • Premier Tag  : \"{op.Tags[0]}\" (échappement géré)");
+    Console.WriteLine($"   • Statut       : {op.Statut}");
+    Console.WriteLine($"   • Destination  : {op.Livraison.Ville} ({op.Livraison.Position.Latitude}, {op.Livraison.Position.Longitude})");
+    Console.WriteLine($"   • Donnée extra : {op.MetaDonneesInconnues?["date_creation_externe"]}");
+}
+
+// 2. RÉÉCRITURE PROTÉGÉE POUR EXCEL
+using var outputStream = new MemoryStream();
+
+var writerOptions = new CsvWriterOptions
+{
+    WriteHeader = true,                          // Génère la première ligne de titre
+    WriteBom = true,                             // Ajoute le BOM UTF-8 pour Excel
+    EscapeFormulas = true,                       // Neutralise '=1+1' en '\'=1+1' pour contrer l'injection
+    FormatHeader = nom => nom.ToUpperInvariant() // Écrit tous les en-têtes en MAJUSCULES
+};
+
+// leaveOpen: true pour pouvoir inspecter outputStream ensuite sans System.ObjectDisposedException[cite: 1]
+await FlashCsvSerializer.SerializeAsync(outputStream, operationsValides, writerOptions, leaveOpen: true);
+```
+
+**Sortie Console Générée**
+```txt
+Commande #101 (Ligne 2) :
+   • Client       : alice@test.com (TVA: FR123456789)
+   • Total parsé  : 250 €
+   • Premier Tag  : "urgent, prioritaire" (échappement géré)
+   • Statut       : Expedie
+   • Destination  : Lyon (45.764, 4.8357)
+   • Donnée extra : 2026-11-02
+[Ligne 3] Champ 'total_commande' invalide (InvalidInteger) -> Ligne ignorée.
+Commande #103 (Ligne 4) :
+   • Client       : charlie@pro.com (TVA: FR987654321)
+   • Total parsé  : 990 €
+   • Premier Tag  : "express" (échappement géré)
+   • Statut       : Expedie
+   • Destination  : Marseille (43.2965, 5.3698)
+   • Donnée extra : 2026-11-02
+```
 
 ## Licence
 
