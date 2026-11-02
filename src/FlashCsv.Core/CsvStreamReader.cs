@@ -19,6 +19,7 @@ public sealed class CsvStreamReader : IAsyncDisposable
     private SearchValues<byte> _delimsAndQuotes = null!;
     private long _currentLineNumber;
     private bool _isDisposed;
+    private static readonly byte[] Utf8Bom = [0xEF, 0xBB, 0xBF];
     private readonly byte[] _detectedNewLine = [(byte)'\r', (byte)'\n'];
     private (int Offset, int Length)[] _columnsBuffer; // Plus readonly !
 
@@ -47,6 +48,16 @@ public sealed class CsvStreamReader : IAsyncDisposable
     private async ValueTask InitializeDelimiterAsync(CancellationToken cancellationToken)
     {
         await FillBufferAsync(cancellationToken).ConfigureAwait(false);
+
+        // Détection et suppression du BOM UTF-8 au début du flux
+        if (_options.DetectAndSkipBom && _bufferEnd - _bufferStart >= 3)
+        {
+            ReadOnlySpan<byte> debut = _rentedBuffer.AsSpan(_bufferStart, 3);
+            if (debut.SequenceEqual(Utf8Bom))
+            {
+                _bufferStart += 3; // On saute purement et simplement les 3 octets du BOM
+            }
+        }
 
         if (_options.Delimiter.HasValue)
         {

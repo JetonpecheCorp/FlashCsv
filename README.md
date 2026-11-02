@@ -7,14 +7,12 @@
 
 **FlashCsv** est une bibliothèque .NET ultra-performante dédiée au parsing, au streaming et à la sérialisation CSV. Conçue de A à Z avec les **Source Generators incrémentaux C#** (`IIncrementalGenerator`), elle garantit une compatibilité totale avec **Native AOT**, élimine toute réflexion au runtime et minimise les allocations mémoire grâce à une architecture bas-niveau (`ref struct`, `Span<byte>`, `ArrayPool<T>`).
 
----
+## Sommaire
 
-## 📑 Sommaire
-
-1. [Pourquoi choisir FlashCsv ?](#-pourquoi-choisir-flashcsv)
-2. [Performances & Benchmarks](#-performances--benchmarks)
-3. [Installation](#-installation)
-4. [Démarrage rapide (Débutant)](#-démarrage-rapide-débutant)
+1. [Pourquoi choisir FlashCsv ?](#pourquoi-choisir-flashcsv-)
+2. [Performances & Benchmarks](#performances--benchmarks)
+3. [Installation](#installation)
+4. [Démarrage rapide (Débutant)](#démarrage-rapide-débutant)
    * [1. Déclarer son premier modèle](#1-déclarer-son-premier-modèle)
    * [2. Lire une chaîne ou un fichier](#2-lire-une-chaîne-ou-un-fichier)
    * [3. Écrire une chaîne ou un fichier](#3-écrire-une-chaîne-ou-un-fichier)
@@ -24,12 +22,12 @@
 6. [Schémas de fonctionnement & Ordre des options](#-schémas-de-fonctionnement)
    * [Cycle de désérialisation (Lecture)](#1-cycle-de-désérialisation-lecture)
    * [Cycle de sérialisation (Écriture)](#2-cycle-de-sérialisation-écriture)
-7. [Guide exhaustif des Attributs](#-guide-exhaustif-des-attributs)
+7. [Guide exhaustif des Attributs](#guide-exhaustif-des-attributs)
    * [Structure & Colonnes](#structure--colonnes)
    * [Formats, Conversions & Collections](#formats-conversions--collections)
    * [Validation de données](#validation-de-données)
    * [Sécurité & Assainissement](#sécurité--assainissement)
-8. [Exemples Pratiques du Quotidien](#-exemples-pratiques-du-quotidien)
+8. [Exemples Pratiques du Quotidien](#exemples-pratiques-du-quotidien)
    * [Validation métier & Bornes](#1-validation-métier-et-bornes)
    * [Tableaux et listes dans une cellule (`[CsvDelimiterArray]`)](#2-listes-et-tableaux-dans-une-seule-cellule)
    * [Sous-objets et sous-sous-objets aplatis en détail (`[CsvFlatten]`)](#3-sous-objets-et-sous-sous-objets-aplatis-csvflatten)
@@ -41,15 +39,13 @@
    * [Polymorphisme et types dérivés (`[CsvDiscriminator]`)](#3-polymorphisme-et-types-dérivés)
    * [Règles conditionnelles sans allocation (`ICsvCondition<T>`)](#4-règles-conditionnelles-sans-allocation-icsvconditiont)
    * [Convertisseur binaire simple et parlant (`ICsvFieldReader<T>`)](#5-convertisseur-binaire-simple-icsvfieldreadert)
-10. [Astuces pour les Confirmés & Experts 🧠](#-astuces-pour-les-confirmés--experts-)
-11. [Référence complète des Options](#-référence-complète-des-options)
+10. [Astuces pour les Confirmés & Experts](#astuces-pour-les-confirmés--experts)
+11. [Référence complète des Options](#️-référence-complète-des-options)
     * [`CsvReaderOptions`](#csvreaderoptions-lecture)
     * [`CsvWriterOptions`](#csvwriteroptions-écriture)
-12. [Licence](#-licence)
+12. [Licence](#licence)
 
----
-
-## 💡 Pourquoi choisir FlashCsv ?
+## Pourquoi choisir FlashCsv ?
 
 La majorité des parseurs CSV traditionnels s'appuient sur la **réflexion C#** (`Type.GetProperties()`, `Activator.CreateInstance()`). Ces mécanismes induisent des allocations massives sur le tas (Heap), saturent le Ramasse-Miettes (GC) et provoquent des régressions ou des avertissements lors de la compilation **Native AOT**.
 
@@ -62,9 +58,7 @@ La majorité des parseurs CSV traditionnels s'appuient sur la **réflexion C#** 
 | **Sécurité intégrée** | Injections de formules Excel non filtrées | **Protection automatique** (`EscapeFormulas`, XSS) |
 | **Alimentation Base SQL** | Nécessite des listes intermédiaires | **`DbDataReader` natif streaming** pour `SqlBulkCopy` |
 
----
-
-## 📊 Performances & Benchmarks
+## Performances & Benchmarks
 
 Mesures officielles réalisées avec **BenchmarkDotNet v0.15.8** sur **Windows 11** (.NET SDK 10.0.403, RyuJIT x86-64-v4, Intel Core i5-1145G7 2.60GHz) :
 
@@ -88,17 +82,13 @@ Mesures officielles réalisées avec **BenchmarkDotNet v0.15.8** sur **Windows 1
 > - **Lecture :** FlashCsv est **~11% à 12% plus rapide** que Sylvan tout en réduisant la mémoire allouée (aucune collection Gen 1 déclenchée).
 > - **Écriture :** FlashCsv écrit **1 million de lignes en seulement ~159 ms** avec à peine 30 MB alloués grâce à son formatage direct UTF-8 sans boxing.
 
----
-
-## 📦 Installation
+## Installation
 
 ```bash
 dotnet add package FlashCsv
 ```
 
----
-
-## 🔰 Démarrage rapide (Débutant)
+## Démarrage rapide (Débutant)
 
 ### 1. Déclarer son premier modèle
 
@@ -177,9 +167,7 @@ await using var outStream = File.Create("export_clients.csv");
 await FlashCsvSerializer.SerializeAsync(outStream, clients);
 ```
 
----
-
-## 🛡️ Gestion des erreurs et Résilience (Sans exception)
+## Gestion des erreurs et Résilience (Sans exception)
 
 Dans FlashCsv, la gestion des erreurs ne nécessite **aucun bloc `try...catch`**. Les erreurs sont directement transmises à votre callback `OnError` sans interrompre votre code par une exception.
 
@@ -304,7 +292,7 @@ await foreach (var client in FlashCsvSerializer.DeserializeAsync<Client>(stream,
       [Succès du parsing]          [Erreur détectée]
               │                            │
               ▼                            ▼
-      📦 INSTANCE T              ⚙️ GESTION D'INCIDENT
+      INSTANCE T              GESTION D'INCIDENT
       (Yield Return)              Options : ErrorMode • OnError
                                   • Déclenche le rappel OnError
                                   • CollectAndContinue ➔ saute ligne
@@ -314,7 +302,7 @@ await foreach (var client in FlashCsvSerializer.DeserializeAsync<Client>(stream,
 ### 2. Cycle de sérialisation (Écriture)
 
 ```text
-📦 OBJETS MÉTIER EN MÉMOIRE (IEnumerable<T> / IAsyncEnumerable<T>)
+OBJETS MÉTIER EN MÉMOIRE (IEnumerable<T> / IAsyncEnumerable<T>)
     │
     ▼
 ┌────────────────────────────────────────────────────────┐
@@ -365,10 +353,10 @@ await foreach (var client in FlashCsvSerializer.DeserializeAsync<Client>(stream,
 └───────────────────────────┬────────────────────────────┘
                             │
                             ▼
- 📄 FICHIER CSV PRODUIT (UTF-8)
+ FICHIER CSV PRODUIT (UTF-8)
 ```
 
-## 🏷️ Guide exhaustif des Attributs
+## Guide exhaustif des Attributs
 
 ### Structure & Colonnes
 
@@ -420,9 +408,7 @@ En résumé, il fonctionne sur **tout type .NET implémentant** `ISpanFormattabl
 | `[CsvSanitizeHtml(mode)]` | Propriété / Champ | Encode ou supprime les balises HTML (`StripTags` / `Encode`). |
 | `[CsvCase(CsvCaseMode)]` | Propriété / Champ | Normalise la casse (`Upper`, `Lower`, `Title`). |
 
----
-
-## 🛠️ Exemples Pratiques du Quotidien
+## Exemples Pratiques du Quotidien
 
 ### 1. Validation métier et Bornes
 
@@ -629,7 +615,7 @@ await foreach (var client in FlashCsvSerializer.DeserializeAsync<Client>(stream,
 }
 ```
 
-> 📌 **Ordre de priorité en lecture :** `ColumnMapping` (dynamique) **>** `[CsvName]` (alias statiques) **>** Nom de la propriété C#.
+> **Ordre de priorité en lecture :** `ColumnMapping` (dynamique) **>** `[CsvName]` (alias statiques) **>** Nom de la propriété C#.
 
 ### 5. Traduction et renommage des en-têtes (`FormatHeader`)
 
@@ -654,11 +640,9 @@ var options = new CsvWriterOptions
 string csv = FlashCsvSerializer.SerializeToString(clients, options);
 ```
 
-> 📌 **Ordre de priorité en écriture :** `FormatHeader` reçoit le 1er nom de `[CsvName]` (ou le nom C#) et produit le libellé final écrit dans le fichier.
+> **Ordre de priorité en écriture :** `FormatHeader` reçoit le 1er nom de `[CsvName]` (ou le nom C#) et produit le libellé final écrit dans le fichier.
 
----
-
-## 🚀 Cas d'usage Avancés & Spécialisés
+## Cas d'usage Avancés & Spécialisés
 
 ### 1. Insertion massive en Base de données (`SqlBulkCopy`)
 
@@ -808,9 +792,7 @@ public partial record struct Facture
 }
 ```
 
----
-
-## 🧠 Astuces pour les Confirmés & Experts
+## Astuces pour les Confirmés & Experts
 
 ### 1. Utilisez des `readonly record struct` pour les flux massifs
 
@@ -846,9 +828,7 @@ Pour inspecter les fichiers générés par le Source Generator ou lever les aver
 </PropertyGroup>
 ```
 
----
-
-## ⚙️ Référence complète des Options
+## Référence complète des Options
 
 ### `CsvReaderOptions` (Lecture)
 
@@ -872,6 +852,7 @@ Pour inspecter les fichiers générés par le Source Generator ou lever les aver
 | `NullValues` | `string[]` | `["", "null", "\\N", ...]` | Valeurs textuelles équivalentes à `null`. |
 | `IgnoreExtraColumns` | `bool` | `true` | Ignore silencieusement les colonnes surnuméraires sans lever d'erreur. |
 | `ColumnMapping` | `Dictionary` | `null` | Dictionnaire de correspondance dynamique `[Propriété C#] => NomColonneCsv`. |
+| `DetectAndSkipBom` | `bool` | `true` | Détecte et ignore le BOM UTF-8 (`0xEF`, `0xBB`, `0xBF`) inséré par Excel au début du fichier. |
 
 ### `CsvWriterOptions` (Écriture)
 
@@ -886,9 +867,8 @@ Pour inspecter les fichiers générés par le Source Generator ou lever les aver
 | `FormatHeader` | `Func<string,string>` | `null` | Fonction optionnelle pour traduire ou reformater les libellés d'en-tête. |
 | `NullFormat` | `string` | `""` | Chaîne de remplacement inscrite lorsqu'une valeur nulle est rencontrée. |
 | `BufferSize` | `int` | `64 Ko` | Taille du buffer tampon avant vidage (`Flush`) vers le flux de destination. |
+| `WriteBom` | `bool` | `false` | Écrit le BOM UTF-8 au début du fichier pour garantir la compatibilité des accents sous Microsoft Excel. |
 
----
-
-## 📄 Licence
+## Licence
 
 Ce projet est distribué sous licence open-source **MIT**. Vous êtes libre de l'utiliser, le modifier et le distribuer dans vos projets personnels ou commerciaux.

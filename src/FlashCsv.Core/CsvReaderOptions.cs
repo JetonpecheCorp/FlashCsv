@@ -19,6 +19,12 @@ public sealed record CsvReaderOptions
     public char? Delimiter { get; init; } = ',';
 
     /// <summary>
+    /// Détecte et ignore automatiquement l'éventuel BOM UTF-8 (0xEF, 0xBB, 0xBF)
+    /// au tout début du flux CSV. Valeur par défaut : true.
+    /// </summary>
+    public bool DetectAndSkipBom { get; init; } = true;
+
+    /// <summary>
     /// Caractère d'échappement / guillemet (ex. '"').
     /// </summary>
     public char[] CandidateDelimiters { get; init; } = [',', ';', '\t', '|'];

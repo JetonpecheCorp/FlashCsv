@@ -47,6 +47,13 @@ public sealed record CsvWriterOptions
     public bool EscapeFormulas { get; init; } = false;
 
     /// <summary>
+    /// Préfixe le fichier CSV par les 3 octets du BOM UTF-8 (0xEF, 0xBB, 0xBF).
+    /// Fortement recommandé pour l'ouverture directe dans Microsoft Excel.
+    /// Valeur par défaut : false.
+    /// </summary>
+    public bool WriteBom { get; init; } = false;
+
+    /// <summary>
     /// Fonction globale optionnelle de transformation appliquée aux chaînes avant écriture.
     /// Signature : (nomColonne, valeurSource) => valeurModifiée.
     /// </summary>

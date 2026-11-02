@@ -14,6 +14,8 @@ public delegate bool FieldFormatter<T>(T value, Span<byte> destination, out int 
 /// </summary>
 public sealed class CsvStreamWriter : IAsyncDisposable
 {
+    private static readonly byte[] Utf8Bom = [0xEF, 0xBB, 0xBF];
+    private bool _bomWritten;
     private readonly Stream _stream;
     public CsvWriterOptions Options { get; }
     private readonly bool _leaveOpen;
@@ -502,6 +504,13 @@ public sealed class CsvStreamWriter : IAsyncDisposable
 
     public async ValueTask WriteHeaderAsync(ReadOnlyMemory<string> headers, CancellationToken cancellationToken = default)
     {
+        // Écriture du BOM UTF-8 avant la première ligne
+        if (Options.WriteBom && !_bomWritten)
+        {
+            await WriteRawBytesMemoryAsync(Utf8Bom, cancellationToken).ConfigureAwait(false);
+            _bomWritten = true;
+        }
+
         for (int i = 0; i < headers.Length; i++)
         {
             string headerName = headers.Span[i];
