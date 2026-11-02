@@ -33,6 +33,7 @@
    * [Sous-objets et sous-sous-objets aplatis en détail (`[CsvFlatten]`)](#3-sous-objets-et-sous-sous-objets-aplatis-csvflatten)
    * [Mapping dynamique d'import (`ColumnMapping`)](#4-mapping-dynamique-dimport-columnmapping)
    * [Traduction dynamique d'en-têtes à l'écriture (`FormatHeader`)](#5-traduction-et-renommage-des-en-têtes-formatheader)
+   * [Transformation globale à la volée](#6-transformation-globale-à-la-volée-transformfield)
 9. [Cas d'usage Avancés & Spécialisés](#-cas-dusage-avancés--spécialisés)
    * [Insertion massive ultra-rapide en base (`SqlBulkCopy` / `CsvDataReader`)](#1-insertion-massive-en-base-de-données-sqlbulkcopy)
    * [Objets et listes d'objets en JSON AOT (`[CsvJson]`)](#2-objets-et-listes-dobjets-complexes-en-json-aot)
@@ -316,9 +317,9 @@ OBJETS MÉTIER EN MÉMOIRE (IEnumerable<T> / IAsyncEnumerable<T>)
                             │
                             ▼
 ┌────────────────────────────────────────────────────────┐
-│  ÉTAPE 2 : FORMATAGE PRIMITIF (IUtf8SpanFormattable)                                   
-│  Options : NullFormat • TransformField                                                                      
-│                                                                                                                                     
+│  ÉTAPE 2 : FORMATAGE PRIMITIF (IUtf8SpanFormattable)  
+│  Options : NullFormat • TransformField                 
+│                                                        
 │  • Nombres / Dates : écrit directement en UTF-8        
 │  • JSON : sérialisé via Utf8JsonWriter sans allocation 
 │  • Si valeur null : insertion du texte NullFormat      
@@ -453,6 +454,8 @@ public partial record struct FicheProduit
     public string[] Tags { get; init; }
 }
 ```
+
+>NOTE: Si un élément contient le délimiteur interne (ex: une virgule), il suffit de le précéder de l'antislash dans le fichier CSV : `"Machin\, truc,Machin 2"`. FlashCsv retirera automatiquement l'échappement à la lecture et le protègera à l'écriture sans couper l'élément.
 
 ### 3. Sous-objets et sous-sous-objets aplatis (`[CsvFlatten]`)
 L'attribut `[CsvFlatten]` permet de conserver un modèle C# propre et orienté objet (avec des sous-objets structurés) tout en manipulant un format CSV plat à deux dimensions (lignes et colonnes).
@@ -642,6 +645,66 @@ string csv = FlashCsvSerializer.SerializeToString(clients, options);
 
 > **Ordre de priorité en écriture :** `FormatHeader` reçoit le 1er nom de `[CsvName]` (ou le nom C#) et produit le libellé final écrit dans le fichier.
 
+### 6. Transformation globale à la volée (`TransformField`)
+
+L'option `TransformField` permet d'intercepter et modifier dynamiquement la valeur textuelle brute de n'importe quelle cellule, sans devoir altérer votre modèle de données C# ni créer de convertisseur dédié.
+
+Sa signature prend le nom de la colonne et la valeur brute sous forme de chaîne :  
+`Func<string, string, string>` ➔ `(colonne, valeur) => valeurTransformée`.
+
+#### A. En lecture (`CsvReaderOptions.TransformField`)
+
+Idéal pour normaliser des chaînes à la volée (par exemple passer des codes pays en majuscules, supprimer des caractères indésirables ou remplacer des valeurs sentinelles avant le parsing) :
+
+```cs
+using FlashCsv.Core;
+
+var options = new CsvReaderOptions
+{
+    // Normalise la colonne "Pays" en majuscules et retire les espaces superflus de l'email
+    TransformField = (colonne, valeur) => colonne switch
+    {
+        "Pays" => valeur.ToUpperInvariant(),
+        "Email" => valeur.Trim().ToLowerInvariant(),
+        _ => valeur
+    }
+};
+
+await foreach (var client in FlashCsvSerializer.DeserializeAsync<Client>(stream, options))
+{
+    // client.Pays sera systématiquement en MAJUSCULES (ex: "FRANCE")
+    // client.Email sera nettoyé et en minuscules
+}
+```
+
+#### B. En écriture (CsvWriterOptions.TransformField)
+Très pratique pour masquer des données sensibles (RGPD / anonymisation d'export) ou appliquer un formatage spécifique sur une colonne avant l'écriture dans le fichier :
+
+```cs
+using FlashCsv.Core;
+
+var options = new CsvWriterOptions
+{
+    WriteHeader = true,
+    // Masque partiellement les adresses email et anonymise les identifiants
+    TransformField = (colonne, valeur) => colonne switch
+    {
+        "Email" when valeur.Contains('@') => 
+            $"{valeur[..2]}***@{valeur.Split('@')[1]}", // "al***@domaine.com"
+        
+        "Rib" or "Iban" => 
+            "**** CONFIDENTIEL ****",
+            
+        _ => valeur
+    }
+};
+
+string csvAnonymise = FlashCsvSerializer.SerializeToString(clients, options);
+```
+
+>Bon à savoir :  
+`TransformField` **s'exécute en premier** : FlashCsv applique automatiquement les guillemets et les sécurités anti-formule **après** votre transformation. Vous n'avez donc pas besoin d'échapper manuellement le texte renvoyé.
+
 ## Cas d'usage Avancés & Spécialisés
 
 ### 1. Insertion massive en Base de données (`SqlBulkCopy`)
@@ -752,7 +815,7 @@ Exemple concret : convertir une cellule contenant un montant avec sa devise (ex:
 using System.Buffers.Text;
 using FlashCsv.Annotations;
 
-public sealed class MontantEuroReader : ICsvFieldReader<int>[cite: 46]
+public sealed class MontantEuroReader : ICsvFieldReader<int>
 {
     // source représente les octets bruts de la cellule dans le fichier CSV
     public static bool TryParse(
@@ -777,7 +840,7 @@ public sealed class MontantEuroReader : ICsvFieldReader<int>[cite: 46]
 
         // 3. En cas de format invalide
         value = 0;
-        errorCode = CsvErrorCode.InvalidInteger;[cite: 47]
+        errorCode = CsvErrorCode.InvalidInteger;
         return false;
     }
 }
@@ -828,6 +891,36 @@ Pour inspecter les fichiers générés par le Source Generator ou lever les aver
 </PropertyGroup>
 ```
 
+### 5. Tests unitaires (xUnit) et cycle de vie des flux (`leaveOpen`)
+
+Par défaut, les méthodes `SerializeAsync` et `DeserializeAsync` disposent (ferment) automatiquement le flux passé en paramètre (`leaveOpen = false` par défaut).
+
+Si vous utilisez un `MemoryStream` dans des tests unitaires (par exemple avec **xUnit**) pour écrire puis relire immédiatement les données via `ms.Position = 0`, vous rencontrerez une exception `System.ObjectDisposedException` si vous ne conservez pas le flux ouvert:
+
+```cs
+[Fact]
+public async Task Roundtrip_Memoire_ShouldPreserveData()
+{
+    var originaux = new[] { new Client { Id = 1, Nom = "Alice", Solde = 100.0 } };
+    using var ms = new MemoryStream();
+
+    // Définir leaveOpen: true pour éviter que SerializeAsync ne ferme ms à la fin
+    await FlashCsvSerializer.SerializeAsync(ms, originaux, leaveOpen: true);
+
+    // Repositionnement au début du flux sans exception
+    ms.Position = 0;
+
+    var resultats = new List<Client>();
+    await foreach (var item in FlashCsvSerializer.DeserializeAsync<Client>(ms))
+    {
+        resultats.Add(item);
+    }
+
+    Assert.Single(resultats);
+    Assert.Equal(originaux[0], resultats[0]);
+}
+```
+
 ## Référence complète des Options
 
 ### `CsvReaderOptions` (Lecture)
@@ -853,6 +946,8 @@ Pour inspecter les fichiers générés par le Source Generator ou lever les aver
 | `IgnoreExtraColumns` | `bool` | `true` | Ignore silencieusement les colonnes surnuméraires sans lever d'erreur. |
 | `ColumnMapping` | `Dictionary` | `null` | Dictionnaire de correspondance dynamique `[Propriété C#] => NomColonneCsv`. |
 | `DetectAndSkipBom` | `bool` | `true` | Détecte et ignore le BOM UTF-8 (`0xEF`, `0xBB`, `0xBF`) inséré par Excel au début du fichier. |
+| `DefaultHtmlSanitizeMode` | `HtmlSanitizeMode?` | `null` | Mode d'assainissement HTML appliqué par défaut à toutes les colonnes `string` (`StripTags` ou `Encode`). |
+| `TransformField` | `Func<string, string, string>?` | `null` | Fonction globale de transformation appliquée aux cellules textuelles lues : `(nomColonne, valeurLue) => valeurModifiée`. |
 
 ### `CsvWriterOptions` (Écriture)
 
@@ -868,6 +963,7 @@ Pour inspecter les fichiers générés par le Source Generator ou lever les aver
 | `NullFormat` | `string` | `""` | Chaîne de remplacement inscrite lorsqu'une valeur nulle est rencontrée. |
 | `BufferSize` | `int` | `64 Ko` | Taille du buffer tampon avant vidage (`Flush`) vers le flux de destination. |
 | `WriteBom` | `bool` | `false` | Écrit le BOM UTF-8 au début du fichier pour garantir la compatibilité des accents sous Microsoft Excel. |
+| `TransformField` | `Func<string, string, string>?` | `null` | Fonction globale de transformation appliquée aux cellules textuelles avant écriture : `(nomColonne, valeurSource) => valeurModifiée`. |
 
 ## Licence
 
