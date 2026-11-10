@@ -5,12 +5,16 @@
     <Nullable>enable</Nullable>
     <PackageId>FlashCsv</PackageId>
     <Version>1.0.5-local</Version>
-    <Authors>n.peyrachon</Authors>
+    <Authors>jetonpeche</Authors>
+    <PackageIcon>logoFlashCsv.png</PackageIcon>
     <Description>Parseur et sérialiseur CSV ultra haute performance, 100% Native AOT.</Description>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include="..\..\assets\logoFlashCsv.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FlashCsv.Annotations\FlashCsv.Annotations.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\FlashCsv.Core\FlashCsv.Core.csproj" PrivateAssets="all" />
