@@ -1,9 +1,13 @@
-# FlashCsv ⚡
+# FlashCsv 
 
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Native AOT](https://img.shields.io/badge/Native%20AOT-100%25-brightgreen.svg)](#-pourquoi-choisir-flashcsv)
 [![Zero Allocation](https://img.shields.io/badge/Memory-High%20Performance-orange.svg)](#-performances--benchmarks)
+
+<p align="center">
+  <img src="assets/logoFlashCsv.png" alt="FlashXlsx Logo" width="220" />
+</p>
 
 **FlashCsv** est une bibliothèque .NET ultra-performante dédiée au parsing, au streaming et à la sérialisation CSV. Conçue de A à Z avec les **Source Generators incrémentaux C#** (`IIncrementalGenerator`), elle garantit une compatibilité totale avec **Native AOT**, élimine toute réflexion au runtime et minimise les allocations mémoire grâce à une architecture bas-niveau (`ref struct`, `Span<byte>`, `ArrayPool<T>`).
 
