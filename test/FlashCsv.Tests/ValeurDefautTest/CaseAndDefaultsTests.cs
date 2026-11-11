@@ -5,21 +5,19 @@ using FlashCsv.Core;
 namespace FlashCsv.Tests.ValeurDefautTest;
 
 [CsvSerializable]
-public partial record struct DefaultUserRecord
+public readonly partial record struct DefaultUserRecord()
 {
-    // Constructeur sans paramètre requis par C# en présence d'initialiseurs
-    public DefaultUserRecord() { }
 
     [CsvName("id")]
     public int Id { get; init; }
 
-    [CsvName("email")]
-    [CsvCase(CsvCaseMode.Lower)]
-    public string Email { get; init; }
+     [CsvName("email")]
+     [CsvCase(CsvCaseMode.Lower)]
+     public string Email { get; init; } = null!;
 
-    [CsvName("country")]
-    [CsvCase(CsvCaseMode.Upper)]
-    public string Country { get; init; }
+     [CsvName("country")]
+     [CsvCase(CsvCaseMode.Upper)]
+     public string Country { get; init; } = null!;
 
     [CsvName("role")]
     public string Role { get; init; } = "standard_user";

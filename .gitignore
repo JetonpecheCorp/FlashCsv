@@ -1,6 +1,7 @@
 # Build results
 bin/
 obj/
+dist/
 
 # User-specific files
 *.suo

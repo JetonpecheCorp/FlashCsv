@@ -3,18 +3,42 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    
+    <!-- Identité du package NuGet -->
     <PackageId>FlashCsv</PackageId>
-    <Version>1.0.5-local</Version>
+    <Version>1.0.0</Version>
     <Authors>jetonpeche</Authors>
+    <Title>FlashCsv</Title>
+    <Description>Parseur et sérialiseur CSV ultra haute performance, 100% Native AOT sans réflexion.</Description>
+    <PackageTags>csv;fast;aot;nativeaot;sourcegenerator;performance;simd;zero-allocation</PackageTags>
+    
+    <!-- Licences et Référentiel -->
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/JetonpecheCorp/FlashCsv</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/JetonpecheCorp/FlashCsv</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    
+    <!-- Documentation & Logo embarqués -->
     <PackageIcon>logoFlashCsv.png</PackageIcon>
-    <Description>Parseur et sérialiseur CSV ultra haute performance, 100% Native AOT.</Description>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    
+    <!-- Métadonnées & Symboles -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- Inclusion automatique des dépendances internes dans le nupkg -->
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
+  <!-- Fichiers statiques intégrés au package -->
   <ItemGroup>
-    <None Include="..\..\assets\logoFlashCsv.png" Pack="true" PackagePath="\" />
+    <None Include="..\..\assets\logoFlashCsv.png" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
+
+  <!-- Références internes -->
   <ItemGroup>
     <ProjectReference Include="..\FlashCsv.Annotations\FlashCsv.Annotations.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\FlashCsv.Core\FlashCsv.Core.csproj" PrivateAssets="all" />
@@ -24,19 +48,15 @@
                       PrivateAssets="all" />
   </ItemGroup>
 
+  <!-- Le Source Generator : automatiquement injecté par Roslyn via analyzers/dotnet/cs -->
   <ItemGroup>
-    <!-- Fichier .props pour forcer le client à charger le générateur comme Analyzer -->
-    <None Include="build\FlashCsv.props" 
-          PackagePath="build\FlashCsv.props"
-          Pack="true" />
-
-    <!-- La DLL du Source Generator -->
     <None Include="..\FlashCsv.Generators\bin\$(Configuration)\netstandard2.0\FlashCsv.Generators.dll" 
           PackagePath="analyzers/dotnet/cs" 
           Pack="true" 
           Visible="false" />
   </ItemGroup>
 
+  <!-- Cible de copie des DLLs des sous-projets dans lib/net10.0/ -->
   <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
     <ItemGroup>
       <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />

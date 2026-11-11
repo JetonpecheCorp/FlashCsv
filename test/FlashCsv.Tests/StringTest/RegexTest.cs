@@ -5,7 +5,7 @@ using FlashCsv.Core;
 namespace FlashCsv.Tests.StringTest;
 
 [CsvSerializable]
-public partial record struct ContactRecord
+public partial record ContactRecord
 {
     [CsvName("id")]
     public int Id { get; init; }
