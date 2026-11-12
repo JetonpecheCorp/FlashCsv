@@ -4,6 +4,7 @@ using FlashCsv.Annotations;
 
 namespace FlashCsv.Core;
 
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public static class CsvSanitizer
 {
     public static string Sanitize(string input, HtmlSanitizeMode mode)

@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Runtime.CompilerServices;
 using System.Text;
 using FlashCsv.Annotations;
@@ -203,4 +204,44 @@ public static class FlashCsvSerializer
     /// </summary>
     public static List<T> Deserialize<T>(ReadOnlyMemory<byte> utf8Csv, CsvReaderOptions? options = null) => 
         DeserializeAsync<T>(utf8Csv, options).GetAwaiter().GetResult();
+
+    /// <summary>
+    /// Crée un adaptateur <see cref="DbDataReader"/> permettant de streamer directement le flux CSV vers une base de données (ex: <c>SqlBulkCopy</c>) avec zéro allocation.
+    /// </summary>
+    /// <typeparam name="T">Le type du modèle de données.</typeparam>
+    /// <param name="stream">Le flux de données source contenant le CSV.</param>
+    /// <param name="options">Les options de configuration pour la lecture du CSV.</param>
+    /// <param name="leaveOpen">Indique si le flux source doit rester ouvert après la lecture (<c>false</c> par défaut).</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Une instance de <see cref="DbDataReader"/> compatible <c>SqlBulkCopy.WriteToServerAsync</c>.</returns>
+    public static DbDataReader CreateDataReader<T>(
+        Stream stream,
+        CsvReaderOptions? options = null,
+        bool leaveOpen = false,
+        CancellationToken cancellationToken = default)
+    {
+        return new CsvDataReader<T>(DeserializeAsync<T>(stream, options, leaveOpen, cancellationToken));
+    }
+
+    /// <summary>
+    /// Encapsule un flux asynchrone dans un adaptateur <see cref="DbDataReader"/> pour l'insertion massive en base de données (ex: <c>SqlBulkCopy</c>).
+    /// </summary>
+    /// <typeparam name="T">Le type du modèle de données.</typeparam>
+    /// <param name="source">La séquence asynchrone d'éléments.</param>
+    /// <returns>Une instance de <see cref="DbDataReader"/> compatible <c>SqlBulkCopy.WriteToServerAsync</c>.</returns>
+    public static DbDataReader CreateDataReader<T>(IAsyncEnumerable<T> source)
+    {
+        return new CsvDataReader<T>(source);
+    }
+
+    /// <summary>
+    /// Encapsule une collection dans un adaptateur <see cref="DbDataReader"/> pour l'insertion massive en base de données (ex: <c>SqlBulkCopy</c>).
+    /// </summary>
+    /// <typeparam name="T">Le type du modèle de données.</typeparam>
+    /// <param name="source">La collection d'éléments.</param>
+    /// <returns>Une instance de <see cref="DbDataReader"/> compatible <c>SqlBulkCopy.WriteToServerAsync</c>.</returns>
+    public static DbDataReader CreateDataReader<T>(IEnumerable<T> source)
+    {
+        return new CsvDataReader<T>(source);
+    }
 }

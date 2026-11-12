@@ -3,7 +3,7 @@ using FlashCsv.Annotations;
 
 namespace FlashCsv.Core;
 
-public ref struct CsvRowTokenizer
+internal ref struct CsvRowTokenizer
 {
     private readonly ReadOnlySpan<byte> _row;
     private readonly byte _delimiter;

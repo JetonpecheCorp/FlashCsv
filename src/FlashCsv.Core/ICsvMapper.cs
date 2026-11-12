@@ -4,8 +4,9 @@ using FlashCsv.Annotations;
 namespace FlashCsv.Core;
 
 /// <summary>
-/// Contrat pour la sérialisation et la désérialisation d'un type sans imposer de contrainte générique sur le modèle.
+/// Contrat interne pour la sérialisation et la désérialisation d'un type sans imposer de contrainte générique sur le modèle.
 /// </summary>
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public interface ICsvMapper<T>
 {
     bool TryDeserialize(CsvRowView row, ReadOnlySpan<int> colMap, out T result, out CsvError error);
@@ -15,8 +16,9 @@ public interface ICsvMapper<T>
 }
 
 /// <summary>
-/// Registre global permettant d'associer un type à son mapper AOT.
+/// Registre interne permettant d'associer un type à son mapper AOT.
 /// </summary>
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public static class CsvMapperRegistry
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -26,6 +28,7 @@ public static class CsvMapperRegistry
 /// <summary>
 /// Cache typé statique résolvant le mapper sans réflexion au runtime.
 /// </summary>
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public static class CsvMapperCache<T>
 {
     public static ICsvMapper<T>? Mapper;

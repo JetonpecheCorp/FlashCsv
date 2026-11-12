@@ -108,6 +108,21 @@
         Deserializes a UTF-8 memory sequence directly into a list of items (Synchronous/Blocking).
       </summary>
     </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.CreateDataReader``1(System.IO.Stream,FlashCsv.Core.CsvReaderOptions,System.Boolean,System.Threading.CancellationToken)">
+      <summary>
+        Creates a DbDataReader adapter enabling direct streaming of the CSV data into a database (e.g. SqlBulkCopy) with zero collection allocation.
+      </summary>
+    </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.CreateDataReader``1(System.Collections.Generic.IAsyncEnumerable{``0})">
+      <summary>
+        Wraps an asynchronous sequence into a DbDataReader adapter for bulk database insertion (e.g. SqlBulkCopy).
+      </summary>
+    </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.CreateDataReader``1(System.Collections.Generic.IEnumerable{``0})">
+      <summary>
+        Wraps an enumerable collection into a DbDataReader adapter for bulk database insertion (e.g. SqlBulkCopy).
+      </summary>
+    </member>
 
     <!-- ====================================================================== -->
     <!-- FlashCsv.Core.CsvReaderOptions                                         -->
@@ -304,16 +319,6 @@
     </member>
     <member name="F:FlashCsv.Core.QuoteStrategy.Never">
       <summary>Never applies quotation marks and fails if special characters are present.</summary>
-    </member>
-
-    <member name="T:FlashCsv.Core.CsvDataReader`1">
-      <summary>
-        DbDataReader adapter enabling direct streaming of CSV parser results into a database (e.g. SqlBulkCopy) with zero collection allocation.
-      </summary>
-    </member>
-
-    <member name="T:FlashCsv.Core.DelimiterSniffer">
-      <summary>Automatic column delimiter detection heuristic for CSV streams.</summary>
     </member>
 
     <member name="T:FlashCsv.Core.ICsvMapper`1">

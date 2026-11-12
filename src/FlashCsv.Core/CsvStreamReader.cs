@@ -4,7 +4,7 @@ using FlashCsv.Annotations;
 
 namespace FlashCsv.Core;
 
-public sealed class CsvStreamReader : IAsyncDisposable
+internal sealed class CsvStreamReader : IAsyncDisposable
 {
     private readonly Stream _stream;
     private readonly bool _leaveOpen;

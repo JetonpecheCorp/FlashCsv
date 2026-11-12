@@ -3,7 +3,7 @@ namespace FlashCsv.Core;
 /// <summary>
 /// Détection automatiquement du séparateur de colonnes d'un flux CSV.
 /// </summary>
-public static class DelimiterSniffer
+internal static class DelimiterSniffer
 {
     private const int MaxSampleSize = 8 * 1024; // Analyse au maximum les 8 premiers Ko
     private const int MaxLinesToInspect = 5;

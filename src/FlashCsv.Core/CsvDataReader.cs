@@ -5,10 +5,10 @@ using System.Reflection;
 namespace FlashCsv.Core;
 
 /// <summary>
-/// Adaptateur permettant de streamer directement le résultat du parseur CSV 
+/// Adaptateur interne permettant de streamer directement le résultat du parseur CSV 
 /// vers une base de données (ex: SqlBulkCopy) avec zéro allocation de collection.
 /// </summary>
-public sealed class CsvDataReader<T> : DbDataReader
+internal sealed class CsvDataReader<T> : DbDataReader
 {
     private readonly IAsyncEnumerator<T> _enumerator;
     private readonly PropertyInfo[] _properties;
@@ -23,6 +23,16 @@ public sealed class CsvDataReader<T> : DbDataReader
         _properties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(p => p.CanRead).ToArray();
         _ordinals = _properties.Select((p, i) => new { p.Name, i })
                                .ToDictionary(x => x.Name, x => x.i, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public CsvDataReader(IEnumerable<T> source) : this(ToAsyncEnumerable(source))
+    {
+    }
+
+    private static async IAsyncEnumerable<T> ToAsyncEnumerable(IEnumerable<T> source)
+    {
+        foreach (var item in source)
+            yield return item;
     }
 
     public override int FieldCount => _properties.Length;

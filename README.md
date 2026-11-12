@@ -41,7 +41,7 @@
    * [Traduction dynamique d'en-têtes à l'écriture (`FormatHeader`)](#5-traduction-et-renommage-des-en-têtes-formatheader)
    * [Transformation globale à la volée](#6-transformation-globale-à-la-volée-transformfield)
 9. [Cas d'usage Avancés & Spécialisés](#-cas-dusage-avancés--spécialisés)
-   * [Insertion massive ultra-rapide en base (`SqlBulkCopy` / `CsvDataReader`)](#1-insertion-massive-en-base-de-données-sqlbulkcopy)
+   * [Insertion massive ultra-rapide en base (`SqlBulkCopy` / `CreateDataReader`)](#1-insertion-massive-en-base-de-données-sqlbulkcopy)
    * [Objets et listes d'objets en JSON AOT (`[CsvJson]`)](#2-objets-et-listes-dobjets-complexes-en-json-aot)
    * [Polymorphisme et types dérivés (`[CsvDiscriminator]`)](#3-polymorphisme-et-types-dérivés)
    * [Règles conditionnelles sans allocation (`ICsvCondition<T>`)](#4-règles-conditionnelles-sans-allocation-icsvconditiont)
@@ -716,7 +716,7 @@ string csvAnonymise = FlashCsvSerializer.SerializeToString(clients, options);
 
 ### 1. Insertion massive en Base de données (`SqlBulkCopy`)
 
-FlashCsv intègre `CsvDataReader<T>` (dérivé de `DbDataReader`), permettant de streamer des millions de lignes directement dans une base SQL sans charger le fichier en mémoire :
+FlashCsv intègre `CreateDataReader<T>` (dérivé de `DbDataReader`), permettant de streamer des millions de lignes directement dans une base SQL sans charger le fichier en mémoire :
 
 ```csharp
 using Microsoft.Data.SqlClient;
@@ -724,13 +724,10 @@ using FlashCsv.Core;
 
 await using var stream = File.OpenRead("gros_fichier_10M.csv");
 
-// 1. Crée le flux asynchrone
-var asyncSequence = FlashCsvSerializer.DeserializeAsync<Transaction>(stream);
+// 1. Crée le DbDataReader natif depuis le flux CSV (ou depuis une séquence existante)
+using var dataReader = FlashCsvSerializer.CreateDataReader<Transaction>(stream);
 
-// 2. Encapsule dans le DbDataReader AOT
-using var dataReader = new CsvDataReader<Transaction>(asyncSequence);
-
-// 3. Déversement direct et continu dans SQL Server
+// 2. Déversement direct et continu dans SQL Server
 using var bulkCopy = new SqlBulkCopy("Server=localhost;Database=MaBase;Trusted_Connection=True;");
 bulkCopy.DestinationTableName = "Transactions";
 bulkCopy.BatchSize = 10_000;

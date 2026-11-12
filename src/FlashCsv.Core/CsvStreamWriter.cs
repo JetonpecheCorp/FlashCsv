@@ -7,11 +7,13 @@ using FlashCsv.Annotations;
 
 namespace FlashCsv.Core;
 
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public delegate bool FieldFormatter<T>(T value, Span<byte> destination, out int bytesWritten, out CsvErrorCode errorCode);
 
 /// <summary>
 /// Écrivain CSV asynchrone ultra haute performance formatant directement en UTF-8 avec 0 allocation mémoire (AOT Ready).
 /// </summary>
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public sealed class CsvStreamWriter : IAsyncDisposable
 {
     private static readonly byte[] Utf8Bom = [0xEF, 0xBB, 0xBF];

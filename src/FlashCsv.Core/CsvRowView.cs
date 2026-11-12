@@ -9,6 +9,7 @@ using System.Text;
 
 namespace FlashCsv.Core;
 
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public readonly ref partial struct CsvRowView
 {
     private readonly ReadOnlySpan<byte> _rawLine;

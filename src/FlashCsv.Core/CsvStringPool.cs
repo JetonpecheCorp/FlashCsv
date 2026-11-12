@@ -3,7 +3,7 @@ using System.Text;
 
 namespace FlashCsv.Core;
 
-public sealed class CsvStringPool
+internal sealed class CsvStringPool
 {
     public static readonly CsvStringPool Shared = new();
 

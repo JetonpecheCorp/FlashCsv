@@ -43,7 +43,7 @@
    * [Dynamic header translation on export (`FormatHeader`)](#5-header-translation-and-renaming-formatheader)
    * [Global on-the-fly field transformation (`TransformField`)](#6-global-on-the-fly-transformation-transformfield)
 9. [Advanced & Specialized Scenarios](#-advanced--specialized-scenarios)
-   * [Massive database ingestion (`SqlBulkCopy` / `CsvDataReader`)](#1-massive-database-insertion-sqlbulkcopy)
+   * [Massive database ingestion (`SqlBulkCopy` / `CreateDataReader`)](#1-massive-database-insertion-sqlbulkcopy)
    * [Complex objects & JSON lists AOT (`[CsvJson]`)](#2-complex-objects-and-json-lists-aot)
    * [Polymorphism & derived types (`[CsvDiscriminator]`)](#3-polymorphism-and-derived-types)
    * [Zero-allocation conditional rules (`ICsvCondition<T>`)](#4-zero-allocation-conditional-rules-icsvconditiont)
@@ -646,7 +646,7 @@ var options = new CsvWriterOptions
 
 ### 1. Massive database insertion (`SqlBulkCopy`)
 
-FlashCsv provides `CsvDataReader<T>` (derived from `DbDataReader`), streaming millions of records directly into SQL Server without intermediate memory allocation:
+FlashCsv provides `CreateDataReader<T>` (derived from `DbDataReader`), streaming millions of records directly into SQL Server without intermediate memory allocation:
 
 ```csharp
 using Microsoft.Data.SqlClient;
@@ -654,13 +654,10 @@ using FlashCsv.Core;
 
 await using var stream = File.OpenRead("large_10M_dataset.csv");
 
-// 1. Create async sequence
-var asyncSequence = FlashCsvSerializer.DeserializeAsync<TransactionRecord>(stream);
+// 1. Direct DbDataReader creation from the CSV stream (or an existing sequence)
+using var dataReader = FlashCsvSerializer.CreateDataReader<TransactionRecord>(stream);
 
-// 2. Wrap into AOT DbDataReader
-using var dataReader = new CsvDataReader<TransactionRecord>(asyncSequence);
-
-// 3. Direct continuous streaming into SQL Server
+// 2. Direct continuous streaming into SQL Server
 using var bulkCopy = new SqlBulkCopy("Server=localhost;Database=MyDb;Trusted_Connection=True;");
 bulkCopy.DestinationTableName = "Transactions";
 bulkCopy.BatchSize = 10_000;
