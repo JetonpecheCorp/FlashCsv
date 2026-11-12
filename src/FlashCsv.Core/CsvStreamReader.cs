@@ -75,8 +75,12 @@ public sealed class CsvStreamReader : IAsyncDisposable
         _delimsAndQuotes = SearchValues.Create([_delimiter, _options.Quote, (byte)'\r', (byte)'\n']);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryReadNextRowSync<T>(int[] colMap, out bool success, out T value, out CsvError error)
+        => TryReadNextRowSync(CsvMapperCache<T>.GetMapper(), colMap, out success, out value, out error);
+
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public bool TryReadNextRowSync<T>(int[] colMap, out bool success, out T value, out CsvError error) where T : ICsvSerializable<T>
+    public bool TryReadNextRowSync<T>(ICsvMapper<T> mapper, int[] colMap, out bool success, out T value, out CsvError error)
     {
         var cols = _columnsBuffer;
         int end = _bufferEnd;
@@ -170,7 +174,7 @@ public sealed class CsvStreamReader : IAsyncDisposable
         if (lineSpan.Length > 0 && lineSpan[^1] == (byte)'\r') lineSpan = lineSpan[..^1];
 
         var view = new CsvRowView(lineSpan, cols.AsSpan(0, colCount), _currentLineNumber, _options, Headers);
-        success = T.TryDeserialize(view, colMap, out value, out error);
+        success = mapper.TryDeserialize(view, colMap, out value, out error);
         return true;
     }
 

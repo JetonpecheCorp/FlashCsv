@@ -9,6 +9,8 @@
   <img src="assets/logoFlashCsv.png" alt="FlashXlsx Logo" width="220" />
 </p>
 
+[English version available here](README.en.md) | [Version française](README.md)
+
 **FlashCsv** est une bibliothèque .NET ultra-performante dédiée au parsing, au streaming et à la sérialisation CSV. Conçue de A à Z avec les **Source Generators incrémentaux C#** (`IIncrementalGenerator`), elle garantit une compatibilité totale avec **Native AOT**, élimine toute réflexion au runtime et minimise les allocations mémoire grâce à une architecture bas-niveau (`ref struct`, `Span<byte>`, `ArrayPool<T>`).
 
 ## Sommaire
@@ -72,21 +74,21 @@ Mesures officielles réalisées avec **BenchmarkDotNet v0.15.8** sur **Windows 1
 
 | Opération | Bibliothèque | Temps moyen (Mean) | Erreur | Écart-type (StdDev) | Rang | Gen 0 | Gen 1 | Mémoire allouée |
 |:---|:---|---:|---:|---:|:---:|---:|---:|---:|
-| **Lecture (Read)** | **FlashCsv** ⚡ | **17.11 ms** | 0.126 ms | 0.112 ms | **2** | 937.5000 | - | **3.85 MB** |
-| Lecture (Read) | Sylvan | 18.44 ms | 0.163 ms | 0.144 ms | 3 | 1000.0000 | 156.2500 | 4.04 MB |
-| **Écriture (Write)** | **FlashCsv** ⚡ | **15.69 ms** | 0.298 ms | 0.278 ms | **1** | 750.0000 | - | **3.05 MB** |
+| **Lecture (Read)** | **FlashCsv** ⚡ | **18.32 ms** | 0.318 ms | 0.435 ms | **2** | 937.5000 | - | **3.82 MB** |
+| Lecture (Read) | Sylvan | 18.96 ms | 0.379 ms | 0.978 ms | 2 | 1000.0000 | 156.2500 | 4.04 MB |
+| **Écriture (Write)** | **FlashCsv** ⚡ | **15.59 ms** | 0.312 ms | 0.485 ms | **1** | 750.0000 | - | **3.05 MB** |
 
 ### 2. Jeu de données : 1 000 000 lignes (1 Million)
 
 | Opération | Bibliothèque | Temps moyen (Mean) | Erreur | Écart-type (StdDev) | Rang | Gen 0 | Mémoire allouée |
 |:---|:---|---:|---:|---:|:---:|---:|---:|
-| **Lecture (Read)** | **FlashCsv** ⚡ | **171.97 ms** | 3.135 ms | 2.779 ms | **2** | 9333.3333 | **38.16 MB** |
-| Lecture (Read) | Sylvan | 193.12 ms | 2.230 ms | 1.862 ms | 3 | 10000.0000 | 40.00 MB |
-| **Écriture (Write)** | **FlashCsv** ⚡ | **159.60 ms** | 2.696 ms | 2.390 ms | **1** | 7333.3333 | **30.52 MB** |
+| **Lecture (Read)** | **FlashCsv** ⚡ | **183.61 ms** | 2.971 ms | 2.481 ms | **2** | 9333.3333 | **38.16 MB** |
+| Lecture (Read) | Sylvan | 194.51 ms | 3.840 ms | 9.201 ms | 2 | 10000.0000 | 40.00 MB |
+| **Écriture (Write)** | **FlashCsv** ⚡ | **159.01 ms** | 3.140 ms | 6.198 ms | **1** | 7500.0000 | **30.52 MB** |
 
 > **Résultats clés :**
-> - **Lecture :** FlashCsv est **~11% à 12% plus rapide** que Sylvan tout en réduisant la mémoire allouée (aucune collection Gen 1 déclenchée).
-> - **Écriture :** FlashCsv écrit **1 million de lignes en seulement ~159 ms** avec à peine 30 MB alloués grâce à son formatage direct UTF-8 sans boxing.
+> - **Lecture :** FlashCsv est **plus rapide** que Sylvan (18.32 ms vs 18.96 ms sur 100k, 183.61 ms vs 194.51 ms sur 1M) tout en allouant moins de mémoire et sans déclencher la moindre collection Gen 1.
+> - **Écriture :** FlashCsv écrit **1 million de lignes en seulement ~159 ms** (Rang 1) avec à peine 30 MB alloués grâce à son formatage direct UTF-8 sans boxing.
 
 ## Installation
 
@@ -119,7 +121,7 @@ public partial record struct Client
 }
 ```
 
-> 💡 **Pourquoi `partial` ?** FlashCsv écrit la seconde moitié de votre classe en arrière-plan lors de la compilation pour y implémenter `ICsvSerializable<Client>` sans aucune réflexion.
+> 💡 **Pourquoi `partial` ?** FlashCsv écrit la seconde moitié de votre classe en arrière-plan lors de la compilation pour générer les mappers AOT et la sérialisation ultra-performante sans aucune réflexion ni contrainte d'interface manuelle.
 
 ### 2. Lire une chaîne ou un fichier
 

@@ -1,0 +1,277 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>FlashCsv.Annotations</name>
+    </assembly>
+<members>
+<!-- ====================================================================== -->
+    <!-- FlashCsv.Annotations Attributes                                        -->
+    <!-- ====================================================================== -->
+    <member name="T:FlashCsv.Annotations.CsvSerializableAttribute">
+      <summary>
+        Instructs the Roslyn Source Generator to produce CSV reader/writer code for this type. Target type must be partial.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvNameAttribute">
+      <summary>
+        Defines the CSV column name or aliases matching this property.
+        During reading, all aliases are tested. During writing, the first name is used.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvRequiredAttribute">
+      <summary>
+        Indicates that this property is required. If the column is missing or empty during reading, a RequiredFieldMissing error is raised.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvRequiredIfAttribute`1">
+      <summary>
+        Indicates that a CSV field becomes required if the given zero-allocation static condition is satisfied.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvIgnoreAttribute">
+      <summary>
+        Indicates that the property should be ignored by the parser during reading and writing.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvIgnoreIfAttribute`1">
+      <summary>
+        Indicates that the property is conditionally ignored based on a zero-allocation static rule.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvOrderAttribute">
+      <summary>
+        Defines the write order of this column during serialization (lower values appear further left).
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvFormatAttribute">
+      <summary>
+        Specifies the date, time, or numerical format used for parsing and writing (e.g. [CsvFormat("yyyy-MM-dd")]).
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvBooleanAttribute">
+      <summary>
+        Customizes the textual representations accepted as boolean values for a specific column.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvNullValuesAttribute">
+      <summary>
+        Specifies candidate strings representing null values for this column (e.g. "NA", "NULL", "\\N").
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvAllowedValuesAttribute">
+      <summary>
+        Restricts allowable values for a field to a specified set of permitted values.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvRangeAttribute">
+      <summary>
+        Validates that a numeric value is within specified minimum and maximum bounds (inclusive).
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvMinAttribute">
+      <summary>
+        Validates that a numeric value is greater than or equal to a minimum bound.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvMaxAttribute">
+      <summary>
+        Validates that a numeric value is less than or equal to a maximum bound.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvMinLengthAttribute">
+      <summary>
+        Validates that the length of a string is greater than or equal to a minimum bound.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvMaxLengthAttribute">
+      <summary>
+        Validates that the length of a string is less than or equal to a maximum bound.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvLengthAttribute">
+      <summary>
+        Validates that the length of a string is within specified minimum and maximum bounds (inclusive).
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvPatternAttribute">
+      <summary>
+        Validates that a text field matches the specified regular expression.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvCaseAttribute">
+      <summary>
+        Automatically normalizes string casing during deserialization or serialization (Upper, Lower, Title).
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvFlattenAttribute">
+      <summary>
+        Flattens properties of a nested object or struct directly into parent CSV columns, with an optional prefix.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvJsonAttribute">
+      <summary>
+        Indicates that the cell contains a JSON payload to deserialize directly into the property type (AOT-ready via JsonSourceGenContext).
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvDelimiterArrayAttribute">
+      <summary>
+        Indicates that an array or list is serialized/deserialized in a single CSV cell by separating elements with an internal delimiter (default ';').
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvExtensionDataAttribute">
+      <summary>
+        Captures all CSV columns that do not match any model property into a Dictionary&lt;string, string&gt;.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvRowNumberAttribute">
+      <summary>
+        Automatically injects the current CSV row number into this numeric property (int or long).
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvSanitizeFormulaAttribute">
+      <summary>
+        Neutralizes potential formula injection for Excel/Calc by prefixing text cells starting with '=', '+', '-', '@' with an apostrophe.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvSanitizeHtmlAttribute">
+      <summary>
+        Cleanses or neutralizes HTML content to prevent XSS vulnerabilities and injection (Encode or StripTags).
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvDiscriminatorAttribute">
+      <summary>
+        Defines the column to use for determining the polymorphic type to instantiate.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvDerivedTypeAttribute">
+      <summary>
+        Associates a discriminator value with a specific derived type for polymorphism.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvEnumAttribute">
+      <summary>
+        Configures the serialization and deserialization format of an enum (Name or UnderlyingValue).
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.CsvEnumMemberNameAttribute">
+      <summary>
+        Specifies the serialization name and deserialization aliases for an enum member.
+      </summary>
+    </member>
+
+    <!-- ====================================================================== -->
+    <!-- FlashCsv.Annotations Diagnostics                                       -->
+    <!-- ====================================================================== -->
+    <member name="T:FlashCsv.Annotations.CsvError">
+      <summary>
+        Represents contextual detail of an error occurring during field or row parsing, with zero heap allocation.
+      </summary>
+      <param name="LineNumber">Physical or logical line number (1-based).</param>
+      <param name="ColumnIndex">Zero-based index of the affected column.</param>
+      <param name="ColumnName">Column header name if headers are enabled; otherwise null.</param>
+      <param name="Code">Error code categorizing the anomaly.</param>
+      <param name="RawValue">Memory segment containing raw UTF-8 bytes that triggered the error.</param>
+    </member>
+    <member name="P:FlashCsv.Annotations.CsvError.RawText">
+      <summary>Retrieves raw value as a UTF-8 string without manual manipulation.</summary>
+    </member>
+    <member name="M:FlashCsv.Annotations.CsvError.GetValueAsString">
+      <summary>Decodes raw value into a UTF-8 string for display or logging.</summary>
+    </member>
+
+    <member name="T:FlashCsv.Annotations.CsvErrorCode">
+      <summary>
+        Defines the set of diagnostic codes emitted on parsing or validation errors, without throwing exceptions.
+      </summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.None">
+      <summary>No error.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.InvalidInteger">
+      <summary>Cannot convert value to integer.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.InvalidFloat">
+      <summary>Value cannot be converted to float or double.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.InvalidDecimal">
+      <summary>Value cannot be converted to decimal.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.InvalidBoolean">
+      <summary>Value does not match any allowed boolean literal.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.InvalidDate">
+      <summary>Value is not a recognized date or time according to specified format.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.InvalidDateTime">
+      <summary>Value is not a recognized date-time according to specified format.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.InvalidGuid">
+      <summary>Value does not match a valid unique identifier (GUID).</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.InvalidJson">
+      <summary>JSON content is malformed, truncated, or incompatible with target type.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.RequiredFieldMissing">
+      <summary>Non-nullable or required field is missing or empty.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.UnterminatedQuote">
+      <summary>Opening quote did not find a matching closing quote before end of row or file.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.RowTooShort">
+      <summary>Row contains fewer columns than expected by schema without explicit permission.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.RowTooLong">
+      <summary>Row contains more columns than expected by schema.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.CannotDetectDelimiter">
+      <summary>Automatic sniffing heuristic failed to identify a consistent delimiter among candidates.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.InvalidFormat">
+      <summary>Cell or row structure violates RFC 4180 rules (e.g. unescaped rogue quote).</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.InvalidEnum">
+      <summary>Row contains an enum value that does not exist.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.ValueOutOfRange">
+      <summary>Value is out of allowed range (min/max).</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.InvalidLength">
+      <summary>String does not satisfy required length constraints.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.PatternMismatch">
+      <summary>Value does not match required regular expression pattern.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.TooManyColumns">
+      <summary>Row contains more columns than defined in strict model.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.FieldTooLarge">
+      <summary>Text value is too large and exceeds buffer security limit.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.CsvErrorCode.InvalidValue">
+      <summary>Value does not follow expected format for this data type.</summary>
+    </member>
+
+    <member name="T:FlashCsv.Annotations.HtmlSanitizeMode">
+      <summary>HTML sanitization modes.</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.HtmlSanitizeMode.Encode">
+      <summary>Converts critical HTML characters into harmless entities (&lt;, &gt;, &amp;, &quot;, &#39;).</summary>
+    </member>
+    <member name="F:FlashCsv.Annotations.HtmlSanitizeMode.StripTags">
+      <summary>Completely strips out HTML tags (&lt;...&gt;).</summary>
+    </member>
+
+    <member name="T:FlashCsv.Annotations.ICsvCondition`1">
+      <summary>Static abstract contract to evaluate a zero-allocation validation condition.</summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.ICsvFieldConverter">
+      <summary>Common base interface identifying CSV field converters.</summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.ICsvFieldReader`1">
+      <summary>Static abstract contract for zero-allocation parsing of a UTF-8 field into a target type.</summary>
+    </member>
+    <member name="T:FlashCsv.Annotations.ICsvFieldWriter`1">
+      <summary>Static abstract contract for zero-allocation serialization of a value into a UTF-8 buffer.</summary>
+    </member>
+  </members>
+</doc>

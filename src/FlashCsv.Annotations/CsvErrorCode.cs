@@ -1,4 +1,4 @@
-﻿namespace FlashCsv.Annotations;
+namespace FlashCsv.Annotations;
 
 /// <summary>
 /// Définit l'ensemble des codes de diagnostic émis en cas d'erreur de parsing ou de validation, sans lever d'exception.

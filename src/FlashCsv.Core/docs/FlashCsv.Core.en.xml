@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>FlashCsv.Core</name>
+  </assembly>
+  <members>
+    <!-- ====================================================================== -->
+    <!-- FlashCsv.Core.FlashCsvSerializer                                       -->
+    <!-- ====================================================================== -->
+    <member name="T:FlashCsv.Core.FlashCsvSerializer">
+      <summary>
+        Main entry point for CSV stream serialization and deserialization.
+        Provides ultra high-performance, zero-allocation asynchronous methods (AOT ready).
+      </summary>
+    </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.DeserializeAsync``1(System.IO.Stream,FlashCsv.Core.CsvReaderOptions,System.Boolean,System.Threading.CancellationToken)">
+      <summary>
+        Reads and deserializes a CSV stream as an asynchronous stream (streaming).
+      </summary>
+      <typeparam name="T">The data model type.</typeparam>
+      <param name="stream">The source data stream containing the CSV.</param>
+      <param name="options">Configuration options for CSV reading.</param>
+      <param name="leaveOpen">Indicates whether the source stream should remain open after reading (false by default).</param>
+      <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+      <returns>An asynchronous stream (IAsyncEnumerable&lt;T&gt;) yielding records one by one.</returns>
+    </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.SerializeAsync``1(System.IO.Stream,System.Collections.Generic.IEnumerable{``0},FlashCsv.Core.CsvWriterOptions,System.Boolean,System.Threading.CancellationToken)">
+      <summary>
+        Serializes a synchronous collection of items to a CSV output stream.
+      </summary>
+      <typeparam name="T">The data model type.</typeparam>
+      <param name="stream">The destination stream where CSV data is written.</param>
+      <param name="items">The collection of items to serialize.</param>
+      <param name="options">Configuration options for CSV writing.</param>
+      <param name="leaveOpen">Indicates whether the destination stream should remain open after writing.</param>
+      <param name="cancellationToken">Cancellation token.</param>
+      <returns>A ValueTask representing the asynchronous operation.</returns>
+    </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.SerializeAsync``1(System.IO.Stream,System.Collections.Generic.IAsyncEnumerable{``0},FlashCsv.Core.CsvWriterOptions,System.Boolean,System.Threading.CancellationToken)">
+      <summary>
+        Serializes an asynchronous stream (e.g. Entity Framework IAsyncEnumerable&lt;T&gt;) to a CSV output stream without allocating memory for the full list.
+      </summary>
+      <typeparam name="T">The data model type.</typeparam>
+      <param name="stream">The destination stream.</param>
+      <param name="items">The asynchronous sequence of items to serialize.</param>
+      <param name="options">Configuration options for CSV writing.</param>
+      <param name="leaveOpen">Indicates whether the destination stream should remain open after writing.</param>
+      <param name="cancellationToken">Cancellation token.</param>
+      <returns>A ValueTask representing the asynchronous operation.</returns>
+    </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.SerializeToStringAsync``1(System.Collections.Generic.IEnumerable{``0},FlashCsv.Core.CsvWriterOptions,System.Threading.CancellationToken)">
+      <summary>
+        Serializes a collection of items into a UTF-16 string (Asynchronous).
+      </summary>
+      <typeparam name="T">The data model type.</typeparam>
+      <param name="items">The collection of items to serialize.</param>
+      <param name="options">Configuration options.</param>
+      <param name="cancellationToken">Cancellation token.</param>
+      <returns>The complete CSV content as a string.</returns>
+    </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.SerializeToUtf8BytesAsync``1(System.Collections.Generic.IEnumerable{``0},FlashCsv.Core.CsvWriterOptions,System.Threading.CancellationToken)">
+      <summary>
+        Serializes a collection of items into a UTF-8 byte array (Asynchronous).
+      </summary>
+      <typeparam name="T">The data model type.</typeparam>
+      <param name="items">The collection of items to serialize.</param>
+      <param name="options">Configuration options.</param>
+      <param name="cancellationToken">Cancellation token.</param>
+      <returns>The complete CSV content as a byte array.</returns>
+    </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.SerializeToString``1(System.Collections.Generic.IEnumerable{``0},FlashCsv.Core.CsvWriterOptions)">
+      <summary>
+        Serializes a collection of items into a UTF-16 string (Synchronous/Blocking).
+      </summary>
+    </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.SerializeToUtf8Bytes``1(System.Collections.Generic.IEnumerable{``0},FlashCsv.Core.CsvWriterOptions)">
+      <summary>
+        Serializes a collection of items into a UTF-8 byte array (Synchronous/Blocking).
+      </summary>
+    </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.DeserializeAsync``1(System.String,FlashCsv.Core.CsvReaderOptions,System.Threading.CancellationToken)">
+      <summary>
+        Deserializes a CSV string directly into a list of items (Asynchronous).
+      </summary>
+      <typeparam name="T">The data model type.</typeparam>
+      <param name="csvText">The CSV content as text.</param>
+      <param name="options">Configuration options.</param>
+      <param name="cancellationToken">Cancellation token.</param>
+      <returns>An instantiated list of deserialized items.</returns>
+    </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.DeserializeAsync``1(System.ReadOnlyMemory{System.Byte},FlashCsv.Core.CsvReaderOptions,System.Threading.CancellationToken)">
+      <summary>
+        Deserializes a UTF-8 memory sequence directly into a list of items (Asynchronous).
+      </summary>
+      <typeparam name="T">The data model type.</typeparam>
+      <param name="utf8Csv">The CSV content in memory encoded in UTF-8.</param>
+      <param name="options">Configuration options.</param>
+      <param name="cancellationToken">Cancellation token.</param>
+      <returns>An instantiated list of deserialized items.</returns>
+    </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.Deserialize``1(System.String,FlashCsv.Core.CsvReaderOptions)">
+      <summary>
+        Deserializes a CSV string directly into a list of items (Synchronous/Blocking).
+      </summary>
+    </member>
+    <member name="M:FlashCsv.Core.FlashCsvSerializer.Deserialize``1(System.ReadOnlyMemory{System.Byte},FlashCsv.Core.CsvReaderOptions)">
+      <summary>
+        Deserializes a UTF-8 memory sequence directly into a list of items (Synchronous/Blocking).
+      </summary>
+    </member>
+
+    <!-- ====================================================================== -->
+    <!-- FlashCsv.Core.CsvReaderOptions                                         -->
+    <!-- ====================================================================== -->
+    <member name="T:FlashCsv.Core.CsvReaderOptions">
+      <summary>
+        Immutable configuration options governing the reading and parsing of CSV streams.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.Delimiter">
+      <summary>
+        Column delimiter character. If null, automatic delimiter sniffing is used. Default is ','.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.DetectAndSkipBom">
+      <summary>
+        Automatically detects and skips any UTF-8 BOM (0xEF, 0xBB, 0xBF) at the very start of the CSV stream. Default is true.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.CandidateDelimiters">
+      <summary>
+        Candidate delimiter characters tested when automatic delimiter sniffing is active.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.Quote">
+      <summary>
+        Quote character enclosing string cells (standard RFC 4180 double quote).
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.CommentPrefix">
+      <summary>
+        Prefix character indicating that a line should be ignored as a comment (e.g. '#').
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.HasHeader">
+      <summary>
+        Indicates whether the first non-empty row contains column names. Default is true.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.TrimWhitespace">
+      <summary>
+        Trims leading and trailing whitespace from each cell before parsing. Default is false.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.IgnoreBlankLines">
+      <summary>
+        Ignores consecutive or empty blank lines without raising an error. Default is true.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.ErrorMode">
+      <summary>
+        Stop or recovery policy when anomalies occur (FailFast or CollectAndContinue). Default is FailFast.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.BufferSize">
+      <summary>
+        Size in bytes of memory buffers allocated during asynchronous pipeline reading. Default is 64 KB.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.MaxFieldSize">
+      <summary>
+        Maximum allowable size in bytes for a cell before raising a security error. Default is 16 MB.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.TrueValues">
+      <summary>
+        Text representations accepted as boolean true. Default: ["true", "1", "yes", "y", "oui"].
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.FalseValues">
+      <summary>
+        Text representations accepted as boolean false. Default: ["false", "0", "no", "n", "non"].
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.NullValues">
+      <summary>
+        Default text representations associated with null values. Default: ["", "null", "NULL", "\\N", "NA"].
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.AllowCommaDecimalSeparator">
+      <summary>
+        Indicates whether comma (',') is accepted and converted on the fly to dot ('.') for decimal number parsing. Default is true.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.OnError">
+      <summary>
+        Callback delegate invoked when a row encounters a parsing error.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.UseStringPooling">
+      <summary>
+        Enables string pooling to drastically reduce memory allocations on columns with repetitive values. Default is true.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.TransformField">
+      <summary>
+        Optional global transformation function applied to read strings: (columnName, readValue) => modifiedValue.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.DateTimeFormat">
+      <summary>
+        Default date/time format when no local [CsvFormat] attribute is specified. E.g. "yyyy-MM-dd", "dd/MM/yyyy".
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.IgnoreExtraColumns">
+      <summary>
+        Indicates whether extra columns beyond headers or model properties should be ignored (true) or trigger a TooManyColumns error (false). Default is true.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.DefaultHtmlSanitizeMode">
+      <summary>
+        Default HTML sanitization mode applied to all string columns. If null, no modification is made.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvReaderOptions.ColumnMapping">
+      <summary>
+        Dynamic mapping between C# property names (or base aliases) and the actual CSV file column names.
+        Example: new() { ["CustomerEmail"] = "adresse_mail", ["VatNumber"] = "tva_intra" }
+      </summary>
+    </member>
+
+    <!-- ====================================================================== -->
+    <!-- FlashCsv.Core.CsvWriterOptions                                         -->
+    <!-- ====================================================================== -->
+    <member name="T:FlashCsv.Core.CsvWriterOptions">
+      <summary>
+        Immutable configuration options governing the writing and serialization of CSV streams.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvWriterOptions.Delimiter">
+      <summary>Column delimiter byte used during writing. Default is (byte)','. </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvWriterOptions.Quote">
+      <summary>Quotation mark byte for escaping fields. Default is (byte)'"'. </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvWriterOptions.NewLine">
+      <summary>Byte sequence marking end of line (default is CRLF "\r\n"). </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvWriterOptions.QuoteStrategy">
+      <summary>Quoting strategy applied to exported cells (Minimal, Always, Never). Default is Minimal. </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvWriterOptions.WriteHeader">
+      <summary>Systematically writes column headers on the first line of the output file. Default is true. </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvWriterOptions.NullFormat">
+      <summary>Substitution text written when a null value is encountered. Default is empty string. </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvWriterOptions.BufferSize">
+      <summary>Buffer size in bytes for memory accumulation during writing. Default is 64 KB. </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvWriterOptions.EscapeFormulas">
+      <summary>
+        Neutralizes text cells starting with '=', '+', '-', '@' or tab by prefixing them with an apostrophe (').
+        Protects against CSV/formula injection in Microsoft Excel and LibreOffice Calc. Default is false.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvWriterOptions.WriteBom">
+      <summary>
+        Prefixes the CSV output with the 3 UTF-8 BOM bytes (0xEF, 0xBB, 0xBF). Strongly recommended for opening directly in Microsoft Excel. Default is false.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvWriterOptions.TransformField">
+      <summary>
+        Optional global transformation function applied to strings before writing: (columnName, sourceValue) => modifiedValue.
+      </summary>
+    </member>
+    <member name="P:FlashCsv.Core.CsvWriterOptions.FormatHeader">
+      <summary>
+        Optional global function allowing dynamic translation or formatting of header names during serialization: (originalName) => translatedName.
+      </summary>
+    </member>
+
+    <!-- ====================================================================== -->
+    <!-- FlashCsv.Core.Enums and helpers                                        -->
+    <!-- ====================================================================== -->
+    <member name="T:FlashCsv.Core.CsvErrorMode">
+      <summary>Determines the reader's behavior when encountering a parsing error.</summary>
+    </member>
+    <member name="F:FlashCsv.Core.CsvErrorMode.FailFast">
+      <summary>Immediately interrupts processing upon the first invalid cell or row.</summary>
+    </member>
+    <member name="F:FlashCsv.Core.CsvErrorMode.CollectAndContinue">
+      <summary>Logs diagnostics to the error collector and continues reading subsequent rows.</summary>
+    </member>
+
+    <member name="T:FlashCsv.Core.QuoteStrategy">
+      <summary>Strategy for enclosing values in quotation marks during writing.</summary>
+    </member>
+    <member name="F:FlashCsv.Core.QuoteStrategy.Minimal">
+      <summary>Encloses in quotes only if the field contains a delimiter, newline, or quotation mark.</summary>
+    </member>
+    <member name="F:FlashCsv.Core.QuoteStrategy.Always">
+      <summary>Systematically encloses all cells in quotation marks.</summary>
+    </member>
+    <member name="F:FlashCsv.Core.QuoteStrategy.Never">
+      <summary>Never applies quotation marks and fails if special characters are present.</summary>
+    </member>
+
+    <member name="T:FlashCsv.Core.CsvDataReader`1">
+      <summary>
+        DbDataReader adapter enabling direct streaming of CSV parser results into a database (e.g. SqlBulkCopy) with zero collection allocation.
+      </summary>
+    </member>
+
+    <member name="T:FlashCsv.Core.DelimiterSniffer">
+      <summary>Automatic column delimiter detection heuristic for CSV streams.</summary>
+    </member>
+
+    <member name="T:FlashCsv.Core.ICsvMapper`1">
+      <summary>
+        Contract for serialization and deserialization of a type without enforcing generic constraints on the model.
+      </summary>
+    </member>
+    <member name="T:FlashCsv.Core.CsvMapperRegistry">
+      <summary>Global registry associating a type with its Native AOT mapper.</summary>
+    </member>
+    <member name="T:FlashCsv.Core.CsvMapperCache`1">
+      <summary>Static typed cache resolving the mapper without runtime reflection.</summary>
+    </member>
+  </members>
+</doc>

@@ -13,7 +13,7 @@ public static class FlashCsvSerializer
     /// <summary>
     /// Lit et désérialise un flux CSV sous la forme d'un flux asynchrone (streaming).
     /// </summary>
-    /// <typeparam name="T">Le type du modèle de données (doit implémenter <see cref="ICsvSerializable{T}"/>).</typeparam>
+    /// <typeparam name="T">Le type du modèle de données.</typeparam>
     /// <param name="stream">Le flux de données source contenant le CSV.</param>
     /// <param name="options">Les options de configuration pour la lecture du CSV.</param>
     /// <param name="leaveOpen">Indique si le flux source doit rester ouvert après la lecture (<c>false</c> par défaut).</param>
@@ -24,8 +24,8 @@ public static class FlashCsvSerializer
         CsvReaderOptions? options = null,
         bool leaveOpen = false,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        where T : ICsvSerializable<T>
     {
+        var mapper = CsvMapperCache<T>.GetMapper();
         options ??= new CsvReaderOptions();
         await using var reader = await CsvStreamReader.CreateAsync(stream, options, leaveOpen, cancellationToken).ConfigureAwait(false);
 
@@ -34,11 +34,11 @@ public static class FlashCsvSerializer
         if (options.HasHeader)
         {
             string[] headers = await reader.ReadHeaderAsync(cancellationToken).ConfigureAwait(false);
-            activeColMap = T.CreateColumnMap(headers, options.ColumnMapping);
+            activeColMap = mapper.CreateColumnMap(headers, options.ColumnMapping);
         }
         else
         {
-            activeColMap = T.CreateColumnMap([], options.ColumnMapping);
+            activeColMap = mapper.CreateColumnMap([], options.ColumnMapping);
             for (int i = 0; i < activeColMap.Length; i++)
             {
                 activeColMap[i] = i;
@@ -47,7 +47,7 @@ public static class FlashCsvSerializer
 
         while (true)
         {
-            while (reader.TryReadNextRowSync<T>(activeColMap, out bool success, out var item, out var error))
+            while (reader.TryReadNextRowSync(mapper, activeColMap, out bool success, out var item, out var error))
             {
                 if (!success)
                 {
@@ -81,14 +81,15 @@ public static class FlashCsvSerializer
     /// <param name="leaveOpen">Indique si le flux de destination doit rester ouvert après l'écriture.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
     /// <returns>Une tâche représentant l'opération asynchrone.</returns>
-    public static async ValueTask SerializeAsync<T>(Stream stream, IEnumerable<T> items, CsvWriterOptions? options = null, bool leaveOpen = false, CancellationToken cancellationToken = default) where T : ICsvSerializable<T>
+    public static async ValueTask SerializeAsync<T>(Stream stream, IEnumerable<T> items, CsvWriterOptions? options = null, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
+        var mapper = CsvMapperCache<T>.GetMapper();
         options ??= new CsvWriterOptions();
         await using var writer = new CsvStreamWriter(stream, options, leaveOpen);
 
-        if (options.WriteHeader) await writer.WriteHeaderAsync(T.GetHeaderNames(), cancellationToken).ConfigureAwait(false);
+        if (options.WriteHeader) await writer.WriteHeaderAsync(mapper.GetHeaderNames(), cancellationToken).ConfigureAwait(false);
 
-        foreach (var item in items) await item.SerializeAsync(writer, cancellationToken).ConfigureAwait(false);
+        foreach (var item in items) await mapper.SerializeAsync(writer, item, cancellationToken).ConfigureAwait(false);
 
         await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -103,14 +104,16 @@ public static class FlashCsvSerializer
     /// <param name="leaveOpen">Indique si le flux de destination doit rester ouvert après l'écriture.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
     /// <returns>Une tâche représentant l'opération asynchrone.</returns>
-    public static async ValueTask SerializeAsync<T>(Stream stream, IAsyncEnumerable<T> items, CsvWriterOptions? options = null, bool leaveOpen = false, CancellationToken cancellationToken = default) where T : ICsvSerializable<T>
+    public static async ValueTask SerializeAsync<T>(Stream stream, IAsyncEnumerable<T> items, CsvWriterOptions? options = null, bool leaveOpen = false, CancellationToken cancellationToken = default)
     {
+        var mapper = CsvMapperCache<T>.GetMapper();
         options ??= new CsvWriterOptions();
         await using var writer = new CsvStreamWriter(stream, options, leaveOpen);
 
-        if (options.WriteHeader) await writer.WriteHeaderAsync(T.GetHeaderNames(), cancellationToken).ConfigureAwait(false);
+        if (options.WriteHeader) await writer.WriteHeaderAsync(mapper.GetHeaderNames(), cancellationToken).ConfigureAwait(false);
 
-        await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false)) await item.SerializeAsync(writer, cancellationToken).ConfigureAwait(false);
+        await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
+            await mapper.SerializeAsync(writer, item, cancellationToken).ConfigureAwait(false);
 
         await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -123,7 +126,7 @@ public static class FlashCsvSerializer
     /// <param name="options">Les options de configuration.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
     /// <returns>Le contenu CSV complet sous forme de <see cref="string"/>.</returns>
-    public static async Task<string> SerializeToStringAsync<T>(IEnumerable<T> items, CsvWriterOptions? options = null, CancellationToken cancellationToken = default) where T : ICsvSerializable<T>
+    public static async Task<string> SerializeToStringAsync<T>(IEnumerable<T> items, CsvWriterOptions? options = null, CancellationToken cancellationToken = default)
     {
         await using var ms = new MemoryStream();
         await SerializeAsync(ms, items, options, false, cancellationToken).ConfigureAwait(false);
@@ -138,7 +141,7 @@ public static class FlashCsvSerializer
     /// <param name="options">Les options de configuration.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
     /// <returns>Le contenu CSV complet sous forme de tableau d'octets.</returns>
-    public static async Task<byte[]> SerializeToUtf8BytesAsync<T>(IEnumerable<T> items, CsvWriterOptions? options = null, CancellationToken cancellationToken = default) where T : ICsvSerializable<T>
+    public static async Task<byte[]> SerializeToUtf8BytesAsync<T>(IEnumerable<T> items, CsvWriterOptions? options = null, CancellationToken cancellationToken = default)
     {
         await using var ms = new MemoryStream();
         await SerializeAsync(ms, items, options, false, cancellationToken).ConfigureAwait(false);
@@ -148,13 +151,13 @@ public static class FlashCsvSerializer
     /// <summary>
     /// Sérialise une collection d'éléments sous la forme d'une chaîne de caractères UTF-16 (Bloquant).
     /// </summary>
-    public static string SerializeToString<T>(IEnumerable<T> items, CsvWriterOptions? options = null) where T : ICsvSerializable<T> => 
+    public static string SerializeToString<T>(IEnumerable<T> items, CsvWriterOptions? options = null) => 
         SerializeToStringAsync(items, options).GetAwaiter().GetResult();
 
     /// <summary>
     /// Sérialise une collection d'éléments sous la forme d'un tableau d'octets UTF-8 (Bloquant).
     /// </summary>
-    public static byte[] SerializeToUtf8Bytes<T>(IEnumerable<T> items, CsvWriterOptions? options = null) where T : ICsvSerializable<T> => 
+    public static byte[] SerializeToUtf8Bytes<T>(IEnumerable<T> items, CsvWriterOptions? options = null) => 
         SerializeToUtf8BytesAsync(items, options).GetAwaiter().GetResult();
 
     /// <summary>
@@ -165,7 +168,7 @@ public static class FlashCsvSerializer
     /// <param name="options">Les options de configuration.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
     /// <returns>Une liste instanciée d'éléments désérialisés.</returns>
-    public static async Task<List<T>> DeserializeAsync<T>(string csvText, CsvReaderOptions? options = null, CancellationToken cancellationToken = default) where T : ICsvSerializable<T>
+    public static async Task<List<T>> DeserializeAsync<T>(string csvText, CsvReaderOptions? options = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(csvText)) return [];
         byte[] utf8Bytes = Encoding.UTF8.GetBytes(csvText);
@@ -180,7 +183,7 @@ public static class FlashCsvSerializer
     /// <param name="options">Les options de configuration.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
     /// <returns>Une liste instanciée d'éléments désérialisés.</returns>
-    public static async Task<List<T>> DeserializeAsync<T>(ReadOnlyMemory<byte> utf8Csv, CsvReaderOptions? options = null, CancellationToken cancellationToken = default) where T : ICsvSerializable<T>
+    public static async Task<List<T>> DeserializeAsync<T>(ReadOnlyMemory<byte> utf8Csv, CsvReaderOptions? options = null, CancellationToken cancellationToken = default)
     {
         if (utf8Csv.IsEmpty) return [];
         await using var ms = new MemoryStream(utf8Csv.ToArray());
@@ -192,12 +195,12 @@ public static class FlashCsvSerializer
     /// <summary>
     /// Désérialise une chaîne CSV directement vers une liste d'éléments (Bloquant).
     /// </summary>
-    public static List<T> Deserialize<T>(string csvText, CsvReaderOptions? options = null) where T : ICsvSerializable<T> => 
+    public static List<T> Deserialize<T>(string csvText, CsvReaderOptions? options = null) => 
         DeserializeAsync<T>(csvText, options).GetAwaiter().GetResult();
 
     /// <summary>
     /// Désérialise une séquence mémoire UTF-8 directement vers une liste d'éléments (Bloquant).
     /// </summary>
-    public static List<T> Deserialize<T>(ReadOnlyMemory<byte> utf8Csv, CsvReaderOptions? options = null) where T : ICsvSerializable<T> => 
+    public static List<T> Deserialize<T>(ReadOnlyMemory<byte> utf8Csv, CsvReaderOptions? options = null) => 
         DeserializeAsync<T>(utf8Csv, options).GetAwaiter().GetResult();
 }

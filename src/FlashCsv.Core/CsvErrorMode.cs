@@ -1,4 +1,4 @@
-﻿namespace FlashCsv.Core;
+namespace FlashCsv.Core;
 
 /// <summary>
 /// Détermine le comportement du lecteur face à une erreur de parsing.

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -36,6 +36,8 @@
   <ItemGroup>
     <None Include="..\..\assets\logoFlashCsv.png" Pack="true" PackagePath="\" Visible="false" />
     <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\FlashCsv.Annotations\docs\FlashCsv.Annotations.en.xml" Pack="true" PackagePath="lib/net10.0/en/FlashCsv.Annotations.xml" Visible="false" />
+    <None Include="..\FlashCsv.Core\docs\FlashCsv.Core.en.xml" Pack="true" PackagePath="lib/net10.0/en/FlashCsv.Core.xml" Visible="false" />
   </ItemGroup>
 
   <!-- Références internes -->
@@ -54,6 +56,8 @@
           PackagePath="analyzers/dotnet/cs" 
           Pack="true" 
           Visible="false" />
+    <None Include="build\FlashCsv.targets" PackagePath="build" Pack="true" Visible="false" />
+    <None Include="build\FlashCsv.targets" PackagePath="buildTransitive" Pack="true" Visible="false" />
   </ItemGroup>
 
   <!-- Cible de copie des DLLs des sous-projets dans lib/net10.0/ -->
