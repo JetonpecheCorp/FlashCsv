@@ -8,7 +8,7 @@ public enum HtmlSanitizeMode
     Encode = 0,
 
     /// <summary>
-    /// Supprime intégralement les balises HTML (<...>).
+    /// Supprime intégralement les balises HTML (&lt;...&gt;).
     /// </summary>
     StripTags = 1
 }
