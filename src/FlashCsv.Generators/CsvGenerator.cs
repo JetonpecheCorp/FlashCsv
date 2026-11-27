@@ -115,6 +115,8 @@ public class CsvGenerator : IIncrementalGenerator
         GenerateHeaderMapping(sb, typeSymbol.Name, properties);
         sb.AppendLine();
         GenerateHeaderNames(sb, properties);
+        sb.AppendLine();
+        GenerateWriteColumnMap(sb, properties);
         sb.AppendLine("}");
         AppendMapperRegistration(sb, typeSymbol);
         return sb.ToString();
@@ -134,6 +136,43 @@ public class CsvGenerator : IIncrementalGenerator
             if (i < all.Count - 1) sb.Append(", ");
         }
         sb.AppendLine("];");
+        sb.AppendLine("    }");
+    }
+
+    private static void GenerateWriteColumnMap(StringBuilder sb, List<IPropertySymbol> properties)
+    {
+        var all = GetAllFlattenedProperties(properties);
+        sb.AppendLine("    public static int[] CreateWriteColumnMap(System.Collections.Generic.IReadOnlyList<string> columnOrder)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        var map = new System.Collections.Generic.List<int>(columnOrder.Count);");
+        sb.AppendLine("        for (int i = 0; i < columnOrder.Count; i++)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            string requested = columnOrder[i];");
+        sb.AppendLine("            if (string.IsNullOrEmpty(requested)) continue;");
+        sb.AppendLine("            int idx = FindWriteColumnIndex(requested);");
+        sb.AppendLine("            if (idx >= 0) map.Add(idx);");
+        sb.AppendLine("        }");
+        sb.AppendLine("        return map.ToArray();");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    private static int FindWriteColumnIndex(string name)");
+        sb.AppendLine("    {");
+        for (int i = 0; i < all.Count; i++)
+        {
+            var item = all[i];
+            var (_, aliases) = GetPropertyAliases(item.Property, item.Prefix);
+            var lookupKeys = new List<string>(aliases);
+            string propKey = string.IsNullOrEmpty(item.Prefix) ? item.Property.Name : $"{item.Prefix}{item.Property.Name}";
+            if (!lookupKeys.Contains(propKey)) lookupKeys.Add(propKey);
+            if (item.ParentProp != null)
+            {
+                string dotKey = $"{item.ParentProp.Name}.{item.Property.Name}";
+                if (!lookupKeys.Contains(dotKey)) lookupKeys.Add(dotKey);
+            }
+            string cond = string.Join(" || ", lookupKeys.Distinct().Select(a => $"string.Equals(name, \"{a}\", StringComparison.OrdinalIgnoreCase)"));
+            sb.AppendLine($"        if ({cond}) return {i};");
+        }
+        sb.AppendLine("        return -1;");
         sb.AppendLine("    }");
     }
 
@@ -264,6 +303,11 @@ public class CsvGenerator : IIncrementalGenerator
         sb.AppendLine("    {");
         sb.AppendLine("        throw new NotImplementedException(\"Sérialisation polymorphe non implémentée sur la classe de base.\");");
         sb.AppendLine("    }");
+        sb.AppendLine("    public System.Threading.Tasks.ValueTask SerializeAsync(CsvStreamWriter writer, int[] columnOrder, System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        throw new NotImplementedException(\"Sérialisation polymorphe non implémentée sur la classe de base.\");");
+        sb.AppendLine("    }");
+        sb.AppendLine("    public static int[] CreateWriteColumnMap(System.Collections.Generic.IReadOnlyList<string> columnOrder) => Array.Empty<int>();");
         sb.AppendLine("    public static string[] GetHeaderNames() => Array.Empty<string>();");
         sb.AppendLine("}");
         AppendMapperRegistration(sb, typeSymbol);
@@ -290,6 +334,12 @@ public class CsvGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine($"    public global::System.Threading.Tasks.ValueTask SerializeAsync(global::FlashCsv.Core.CsvStreamWriter writer, {typeFullName} item, global::System.Threading.CancellationToken cancellationToken = default)");
         sb.AppendLine("        => item.SerializeAsync(writer, cancellationToken);");
+        sb.AppendLine();
+        sb.AppendLine("    public int[] CreateWriteColumnMap(global::System.Collections.Generic.IReadOnlyList<string> columnOrder)");
+        sb.AppendLine($"        => {typeFullName}.CreateWriteColumnMap(columnOrder);");
+        sb.AppendLine();
+        sb.AppendLine($"    public global::System.Threading.Tasks.ValueTask SerializeAsync(global::FlashCsv.Core.CsvStreamWriter writer, {typeFullName} item, int[] columnOrder, global::System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("        => item.SerializeAsync(writer, columnOrder, cancellationToken);");
         sb.AppendLine("}");
         sb.AppendLine();
         sb.AppendLine($"internal static class __FlashCsvRegistration_{safeName}");
@@ -724,232 +774,252 @@ public class CsvGenerator : IIncrementalGenerator
 
     private static void GenerateTrySerialize(StringBuilder sb, string typeName, List<IPropertySymbol> properties)
     {
+        var all = GetAllFlattenedProperties(properties);
+
         sb.AppendLine("    public async ValueTask SerializeAsync(CsvStreamWriter writer, CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
-
-        foreach (var prop in properties)
+        for (int i = 0; i < all.Count; i++)
         {
-            var (isFlattened, _) = GetFlattenInfo(prop);
-            if (isFlattened && prop.Type is INamedTypeSymbol childType)
+            var item = all[i];
+            GenerateWriteSingleProperty(sb, item.Property, item.ParentProp, "        ");
+        }
+        sb.AppendLine("        await writer.WriteEndOfLineAsync(cancellationToken).ConfigureAwait(false);");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        sb.AppendLine("    public async ValueTask SerializeAsync(CsvStreamWriter writer, int[] columnOrder, CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        for (int __colIdx = 0; __colIdx < columnOrder.Length; __colIdx++)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            switch (columnOrder[__colIdx])");
+        sb.AppendLine("            {");
+        for (int i = 0; i < all.Count; i++)
+        {
+            var item = all[i];
+            sb.AppendLine($"                case {i}:");
+            sb.AppendLine("                {");
+            GenerateWriteSingleProperty(sb, item.Property, item.ParentProp, "                    ");
+            sb.AppendLine("                    break;");
+            sb.AppendLine("                }");
+        }
+        sb.AppendLine("            }");
+        sb.AppendLine("        }");
+        sb.AppendLine("        await writer.WriteEndOfLineAsync(cancellationToken).ConfigureAwait(false);");
+        sb.AppendLine("    }");
+    }
+
+    private static void GenerateWriteSingleProperty(StringBuilder sb, IPropertySymbol prop, IPropertySymbol? parentProp, string indent)
+    {
+        if (parentProp != null)
+        {
+            string childAccessor = $"this.{parentProp.Name}.{prop.Name}";
+            if (prop.Type.SpecialType == SpecialType.System_String)
             {
-                var childProps = GetMappableProperties(childType);
-                foreach (var childProp in childProps)
-                {
-                    string childAccessor = $"this.{prop.Name}.{childProp.Name}";
-                    if (childProp.Type.SpecialType == SpecialType.System_String)
-                    {
-                        bool sanitizeFormula = HasSanitizeFormulaAttribute(childProp);
-                        string sanitizeArg = sanitizeFormula ? "true" : "false";
-                        sb.AppendLine($"        await writer.WriteFieldAsync({childAccessor}, {sanitizeArg}, cancellationToken).ConfigureAwait(false);");
-                    }
-                    else
-                    {
-                        sb.AppendLine($"        await writer.WriteFieldAsync({childAccessor}, cancellationToken).ConfigureAwait(false);");
-                    }
-                }
-                continue;
-            }
-
-            string propName = prop.Name;
-            var ignoreIfConditionType = GetIgnoreIfConditionType(prop);
-
-            if (ignoreIfConditionType != null)
-            {
-                sb.AppendLine($"        if ({ignoreIfConditionType.ToDisplayString()}.IsSatisfied(in this))");
-                sb.AppendLine("        {");
-                sb.AppendLine("            await writer.WriteEmptyFieldAsync(cancellationToken).ConfigureAwait(false);");
-                sb.AppendLine("        }");
-                sb.AppendLine("        else");
-                sb.AppendLine("        {");
-            }
-
-            bool isJson = prop.GetAttributes().Any(a => a.AttributeClass?.Name is "CsvJsonAttribute" or "CsvJson");
-            var customConverter = GetCustomConverter(prop);
-
-            if (isJson)
-            {
-                sb.AppendLine($"        await writer.WriteJsonFieldAsync(this.{propName}, null, cancellationToken).ConfigureAwait(false);");
-            }
-            else if (customConverter != null)
-            {
-                string converterName = customConverter.ToDisplayString();
-
-                if (prop.Type.IsReferenceType || prop.Type.NullableAnnotation == NullableAnnotation.Annotated)
-                {
-                    sb.AppendLine($$"""
-                        if (this.{{propName}} == null)
-                        {
-                            await writer.WriteEmptyFieldAsync(cancellationToken).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            await writer.WriteCustomFieldAsync(this.{{propName}}, {{converterName}}.TryFormat, cancellationToken).ConfigureAwait(false);
-                        }
-                        """);
-                }
-                else
-                {
-                    sb.AppendLine($"        await writer.WriteCustomFieldAsync(this.{propName}, {converterName}.TryFormat, cancellationToken).ConfigureAwait(false);");
-                }
-            }
-            else if (IsEnumType(prop.Type, out var enumSymbol))
-            {
-                string enumTypeName = enumSymbol.ToDisplayString();
-                int format = GetEnumFormat(prop);
-                bool isNullableStruct = prop.Type is INamedTypeSymbol named && 
-                                       named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
-
-                string valueAccessor = isNullableStruct ? $"this.{propName}.Value" : $"this.{propName}";
-
-                if (isNullableStruct)
-                {
-                    sb.AppendLine($"        if (!this.{propName}.HasValue)");
-                    sb.AppendLine("        {");
-                    sb.AppendLine("            await writer.WriteEmptyFieldAsync(cancellationToken).ConfigureAwait(false);");
-                    sb.AppendLine("        }");
-                    sb.AppendLine("        else");
-                    sb.AppendLine("        {");
-                }
-
-                if (format == 1)
-                {
-                    sb.AppendLine($"        await writer.WriteFieldAsync((int){valueAccessor}, cancellationToken).ConfigureAwait(false);");
-                }
-                else
-                {
-                    var enumFields = enumSymbol.GetMembers().OfType<IFieldSymbol>().Where(f => f.HasConstantValue).ToList();
-
-                    sb.AppendLine($"        switch ({valueAccessor})");
-                    sb.AppendLine("        {");
-                    foreach (var field in enumFields)
-                    {
-                        var (primaryName, _) = GetEnumMemberDetails(field);
-                        sb.AppendLine($"            case {enumTypeName}.{field.Name}:");
-                        sb.AppendLine($"                await writer.WriteFieldAsync(\"{primaryName}\", cancellationToken).ConfigureAwait(false);");
-                        sb.AppendLine("                break;");
-                    }
-                    sb.AppendLine("            default:");
-                    sb.AppendLine($"                await writer.WriteFieldAsync({valueAccessor}.ToString(), cancellationToken).ConfigureAwait(false);");
-                    sb.AppendLine("                break;");
-                    sb.AppendLine("        }");
-                }
-
-                if (isNullableStruct)
-                {
-                    sb.AppendLine("        }");
-                }
+                bool sanitizeFormula = HasSanitizeFormulaAttribute(prop);
+                string sanitizeArg = sanitizeFormula ? "true" : "false";
+                sb.AppendLine($"{indent}await writer.WriteFieldAsync({childAccessor}, {sanitizeArg}, cancellationToken).ConfigureAwait(false);");
             }
             else
             {
-                var effectiveType = UnwrapNullable(prop.Type);
-                bool isNullableStruct = prop.Type is INamedTypeSymbol named && 
-                                       named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
-
-                if (isNullableStruct)
-                {
-                    sb.AppendLine($"        if (!this.{propName}.HasValue)");
-                    sb.AppendLine("        {");
-                    sb.AppendLine("            await writer.WriteEmptyFieldAsync(cancellationToken).ConfigureAwait(false);");
-                    sb.AppendLine("        }");
-                    sb.AppendLine("        else");
-                    sb.AppendLine("        {");
-                }
-
-                string valueAccessor = isNullableStruct ? $"this.{propName}.Value" : $"this.{propName}";
-
-                switch (effectiveType.SpecialType)
-                {
-                    case SpecialType.System_String:
-                        bool sanitizeFormula = HasSanitizeFormulaAttribute(prop);
-                        string sanitizeArg = sanitizeFormula ? "true" : "false";
-                        var caseModeWrite = GetCaseMode(prop);
-                        string valExpr = $"this.{propName}";
-
-                        if (caseModeWrite.HasValue)
-                        {
-                            string caseEnum = caseModeWrite.Value switch { 1 => "Lower", 2 => "Title", _ => "Upper" };
-                            valExpr = $"global::FlashCsv.Core.CsvSanitizer.ApplyCase({valExpr}, global::FlashCsv.Annotations.CsvCaseMode.{caseEnum})";
-                        }
-
-                        sb.AppendLine($"        string? out_{propName} = {valExpr};");
-                        sb.AppendLine($"        if (writer.Options.TransformField != null && out_{propName} != null)");
-                        sb.AppendLine("        {");
-                        sb.AppendLine($"            out_{propName} = writer.Options.TransformField(\"{propName}\", out_{propName});");
-                        sb.AppendLine("        }");
-                        sb.AppendLine($"        await writer.WriteFieldAsync(out_{propName}, {sanitizeArg}, cancellationToken).ConfigureAwait(false);");
-                        break;
-
-                    case SpecialType.System_Int32:
-                    case SpecialType.System_Int64:
-                    case SpecialType.System_Single:
-                    case SpecialType.System_Double:
-                    case SpecialType.System_Decimal:
-                    case SpecialType.System_Boolean:
-                        sb.AppendLine($"        await writer.WriteFieldAsync({valueAccessor}, cancellationToken).ConfigureAwait(false);");
-                        break;
-
-                    case SpecialType.System_DateTime:
-                        string? dtFormat = GetCustomFormat(prop);
-                        string dtFormatArg = dtFormat != null ? $"\"{dtFormat}\"" : "null";
-                        sb.AppendLine($"        await writer.WriteFieldAsync({valueAccessor}, format: {dtFormatArg}, ct: cancellationToken).ConfigureAwait(false);");
-                        break;
-
-                    default:
-                        if (GetDelimiterArrayInfo(prop) is var arrayInfo && arrayInfo.HasValue && IsArrayOrList(effectiveType, out var elemType, out _))
-                        {
-                            char sepChar = arrayInfo.Value.Delimiter;
-                            char escChar = arrayInfo.Value.EscapeChar;
-                            string escCharLiteral = escChar == '\0' ? "'\\0'" : (escChar == '\\' ? "'\\\\'" : $"'{escChar}'");
-                            string sepCharLiteral = sepChar == '\\' ? "'\\\\'" : $"'{sepChar}'";
-
-                            sb.AppendLine($"        if (this.{propName} == null)");
-                            sb.AppendLine("        {");
-                            sb.AppendLine("            await writer.WriteEmptyFieldAsync(cancellationToken).ConfigureAwait(false);");
-                            sb.AppendLine("        }");
-                            sb.AppendLine("        else");
-                            sb.AppendLine("        {");
-                            if (elemType.SpecialType == SpecialType.System_String)
-                                sb.AppendLine($"            string joined_{propName} = global::FlashCsv.Core.CsvSanitizer.JoinWithEscape(this.{propName}, {sepCharLiteral}, {escCharLiteral});");
-                            else
-                                sb.AppendLine($"            string joined_{propName} = string.Join('{sepChar}', this.{propName});");
-                            
-                            sb.AppendLine($"            await writer.WriteFieldAsync(joined_{propName}, cancellationToken).ConfigureAwait(false);");
-                            sb.AppendLine("        }");
-                            break;
-                        }
-
-                        string typeFullName = effectiveType.ToDisplayString();
-                        string? customFormat2 = GetCustomFormat(prop);
-                        string formatArg2 = customFormat2 != null ? $"\"{customFormat2}\"" : "null";
-
-                        if (typeFullName is "System.DateOnly" or "System.TimeOnly")
-                        {
-                            sb.AppendLine($"        await writer.WriteFieldAsync({valueAccessor}, format: {formatArg2}, ct: cancellationToken).ConfigureAwait(false);");
-                        }
-                        else if (typeFullName == "System.Guid")
-                        {
-                            string guidFormatArg = customFormat2 != null ? $"\"{customFormat2}\"" : "\"D\"";
-                            sb.AppendLine($"        await writer.WriteFieldAsync({valueAccessor}, format: {guidFormatArg}, ct: cancellationToken).ConfigureAwait(false);");
-                        }
-                        else if (prop.Type.IsReferenceType)
-                        {
-                            sb.AppendLine($"        await writer.WriteFieldAsync(this.{propName}?.ToString(), cancellationToken).ConfigureAwait(false);");
-                        }
-                        else
-                        {
-                            sb.AppendLine($"        await writer.WriteFieldAsync({valueAccessor}.ToString(), cancellationToken).ConfigureAwait(false);");
-                        }
-                        break;
-                }
-
-                if (isNullableStruct) sb.AppendLine("        }");
+                sb.AppendLine($"{indent}await writer.WriteFieldAsync({childAccessor}, cancellationToken).ConfigureAwait(false);");
             }
-
-            if (ignoreIfConditionType != null) sb.AppendLine("        }");
+            return;
         }
 
-        sb.AppendLine("        await writer.WriteEndOfLineAsync(cancellationToken).ConfigureAwait(false);");
-        sb.AppendLine("    }");
+        string propName = prop.Name;
+        var ignoreIfConditionType = GetIgnoreIfConditionType(prop);
+
+        if (ignoreIfConditionType != null)
+        {
+            sb.AppendLine($"{indent}if ({ignoreIfConditionType.ToDisplayString()}.IsSatisfied(in this))");
+            sb.AppendLine($"{indent}{{");
+            sb.AppendLine($"{indent}    await writer.WriteEmptyFieldAsync(cancellationToken).ConfigureAwait(false);");
+            sb.AppendLine($"{indent}}}");
+            sb.AppendLine($"{indent}else");
+            sb.AppendLine($"{indent}{{");
+        }
+
+        bool isJson = prop.GetAttributes().Any(a => a.AttributeClass?.Name is "CsvJsonAttribute" or "CsvJson");
+        var customConverter = GetCustomConverter(prop);
+
+        if (isJson)
+        {
+            sb.AppendLine($"{indent}await writer.WriteJsonFieldAsync(this.{propName}, null, cancellationToken).ConfigureAwait(false);");
+        }
+        else if (customConverter != null)
+        {
+            string converterName = customConverter.ToDisplayString();
+
+            if (prop.Type.IsReferenceType || prop.Type.NullableAnnotation == NullableAnnotation.Annotated)
+            {
+                sb.AppendLine($"{indent}if (this.{propName} == null)");
+                sb.AppendLine($"{indent}{{");
+                sb.AppendLine($"{indent}    await writer.WriteEmptyFieldAsync(cancellationToken).ConfigureAwait(false);");
+                sb.AppendLine($"{indent}}}");
+                sb.AppendLine($"{indent}else");
+                sb.AppendLine($"{indent}{{");
+                sb.AppendLine($"{indent}    await writer.WriteCustomFieldAsync(this.{propName}, {converterName}.TryFormat, cancellationToken).ConfigureAwait(false);");
+                sb.AppendLine($"{indent}}}");
+            }
+            else
+            {
+                sb.AppendLine($"{indent}await writer.WriteCustomFieldAsync(this.{propName}, {converterName}.TryFormat, cancellationToken).ConfigureAwait(false);");
+            }
+        }
+        else if (IsEnumType(prop.Type, out var enumSymbol))
+        {
+            string enumTypeName = enumSymbol.ToDisplayString();
+            int format = GetEnumFormat(prop);
+            bool isNullableStruct = prop.Type is INamedTypeSymbol named &&
+                                   named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
+
+            string valueAccessor = isNullableStruct ? $"this.{propName}.Value" : $"this.{propName}";
+
+            if (isNullableStruct)
+            {
+                sb.AppendLine($"{indent}if (!this.{propName}.HasValue)");
+                sb.AppendLine($"{indent}{{");
+                sb.AppendLine($"{indent}    await writer.WriteEmptyFieldAsync(cancellationToken).ConfigureAwait(false);");
+                sb.AppendLine($"{indent}}}");
+                sb.AppendLine($"{indent}else");
+                sb.AppendLine($"{indent}{{");
+            }
+
+            if (format == 1)
+            {
+                sb.AppendLine($"{indent}await writer.WriteFieldAsync((int){valueAccessor}, cancellationToken).ConfigureAwait(false);");
+            }
+            else
+            {
+                var enumFields = enumSymbol.GetMembers().OfType<IFieldSymbol>().Where(f => f.HasConstantValue).ToList();
+
+                sb.AppendLine($"{indent}switch ({valueAccessor})");
+                sb.AppendLine($"{indent}{{");
+                foreach (var field in enumFields)
+                {
+                    var (primaryName, _) = GetEnumMemberDetails(field);
+                    sb.AppendLine($"{indent}    case {enumTypeName}.{field.Name}:");
+                    sb.AppendLine($"{indent}        await writer.WriteFieldAsync(\"{primaryName}\", cancellationToken).ConfigureAwait(false);");
+                    sb.AppendLine($"{indent}        break;");
+                }
+                sb.AppendLine($"{indent}    default:");
+                sb.AppendLine($"{indent}        await writer.WriteFieldAsync({valueAccessor}.ToString(), cancellationToken).ConfigureAwait(false);");
+                sb.AppendLine($"{indent}        break;");
+                sb.AppendLine($"{indent}}}");
+            }
+
+            if (isNullableStruct)
+            {
+                sb.AppendLine($"{indent}}}");
+            }
+        }
+        else
+        {
+            var effectiveType = UnwrapNullable(prop.Type);
+            bool isNullableStruct = prop.Type is INamedTypeSymbol named &&
+                                   named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
+
+            if (isNullableStruct)
+            {
+                sb.AppendLine($"{indent}if (!this.{propName}.HasValue)");
+                sb.AppendLine($"{indent}{{");
+                sb.AppendLine($"{indent}    await writer.WriteEmptyFieldAsync(cancellationToken).ConfigureAwait(false);");
+                sb.AppendLine($"{indent}}}");
+                sb.AppendLine($"{indent}else");
+                sb.AppendLine($"{indent}{{");
+            }
+
+            string valueAccessor = isNullableStruct ? $"this.{propName}.Value" : $"this.{propName}";
+
+            switch (effectiveType.SpecialType)
+            {
+                case SpecialType.System_String:
+                    bool sanitizeFormula = HasSanitizeFormulaAttribute(prop);
+                    string sanitizeArg = sanitizeFormula ? "true" : "false";
+                    var caseModeWrite = GetCaseMode(prop);
+                    string valExpr = $"this.{propName}";
+
+                    if (caseModeWrite.HasValue)
+                    {
+                        string caseEnum = caseModeWrite.Value switch { 1 => "Lower", 2 => "Title", _ => "Upper" };
+                        valExpr = $"global::FlashCsv.Core.CsvSanitizer.ApplyCase({valExpr}, global::FlashCsv.Annotations.CsvCaseMode.{caseEnum})";
+                    }
+
+                    sb.AppendLine($"{indent}string? out_{propName} = {valExpr};");
+                    sb.AppendLine($"{indent}if (writer.Options.TransformField != null && out_{propName} != null)");
+                    sb.AppendLine($"{indent}{{");
+                    sb.AppendLine($"{indent}    out_{propName} = writer.Options.TransformField(\"{propName}\", out_{propName});");
+                    sb.AppendLine($"{indent}}}");
+                    sb.AppendLine($"{indent}await writer.WriteFieldAsync(out_{propName}, {sanitizeArg}, cancellationToken).ConfigureAwait(false);");
+                    break;
+
+                case SpecialType.System_Int32:
+                case SpecialType.System_Int64:
+                case SpecialType.System_Single:
+                case SpecialType.System_Double:
+                case SpecialType.System_Decimal:
+                case SpecialType.System_Boolean:
+                    sb.AppendLine($"{indent}await writer.WriteFieldAsync({valueAccessor}, cancellationToken).ConfigureAwait(false);");
+                    break;
+
+                case SpecialType.System_DateTime:
+                    string? dtFormat = GetCustomFormat(prop);
+                    string dtFormatArg = dtFormat != null ? $"\"{dtFormat}\"" : "null";
+                    sb.AppendLine($"{indent}await writer.WriteFieldAsync({valueAccessor}, format: {dtFormatArg}, ct: cancellationToken).ConfigureAwait(false);");
+                    break;
+
+                default:
+                    if (GetDelimiterArrayInfo(prop) is var arrayInfo && arrayInfo.HasValue && IsArrayOrList(effectiveType, out var elemType, out _))
+                    {
+                        char sepChar = arrayInfo.Value.Delimiter;
+                        char escChar = arrayInfo.Value.EscapeChar;
+                        string escCharLiteral = escChar == '\0' ? "'\\0'" : (escChar == '\\' ? "'\\\\'" : $"'{escChar}'");
+                        string sepCharLiteral = sepChar == '\\' ? "'\\\\'" : $"'{sepChar}'";
+
+                        sb.AppendLine($"{indent}if (this.{propName} == null)");
+                        sb.AppendLine($"{indent}{{");
+                        sb.AppendLine($"{indent}    await writer.WriteEmptyFieldAsync(cancellationToken).ConfigureAwait(false);");
+                        sb.AppendLine($"{indent}}}");
+                        sb.AppendLine($"{indent}else");
+                        sb.AppendLine($"{indent}{{");
+                        if (elemType.SpecialType == SpecialType.System_String)
+                            sb.AppendLine($"{indent}    string joined_{propName} = global::FlashCsv.Core.CsvSanitizer.JoinWithEscape(this.{propName}, {sepCharLiteral}, {escCharLiteral});");
+                        else
+                            sb.AppendLine($"{indent}    string joined_{propName} = string.Join('{sepChar}', this.{propName});");
+
+                        sb.AppendLine($"{indent}    await writer.WriteFieldAsync(joined_{propName}, cancellationToken).ConfigureAwait(false);");
+                        sb.AppendLine($"{indent}}}");
+                        break;
+                    }
+
+                    string typeFullName = effectiveType.ToDisplayString();
+                    string? customFormat2 = GetCustomFormat(prop);
+                    string formatArg2 = customFormat2 != null ? $"\"{customFormat2}\"" : "null";
+
+                    if (typeFullName is "System.DateOnly" or "System.TimeOnly")
+                    {
+                        sb.AppendLine($"{indent}await writer.WriteFieldAsync({valueAccessor}, format: {formatArg2}, ct: cancellationToken).ConfigureAwait(false);");
+                    }
+                    else if (typeFullName == "System.Guid")
+                    {
+                        string guidFormatArg = customFormat2 != null ? $"\"{customFormat2}\"" : "\"D\"";
+                        sb.AppendLine($"{indent}await writer.WriteFieldAsync({valueAccessor}, format: {guidFormatArg}, ct: cancellationToken).ConfigureAwait(false);");
+                    }
+                    else if (prop.Type.IsReferenceType)
+                    {
+                        sb.AppendLine($"{indent}await writer.WriteFieldAsync(this.{propName}?.ToString(), cancellationToken).ConfigureAwait(false);");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"{indent}await writer.WriteFieldAsync({valueAccessor}.ToString(), cancellationToken).ConfigureAwait(false);");
+                    }
+                    break;
+            }
+
+            if (isNullableStruct) sb.AppendLine($"{indent}}}");
+        }
+
+        if (ignoreIfConditionType != null) sb.AppendLine($"{indent}}}");
     }
 
     private static void GenerateTryDeserialize(StringBuilder sb, INamedTypeSymbol typeSymbol, List<IPropertySymbol> properties)

@@ -42,6 +42,7 @@
    * [Dynamic import mapping (`ColumnMapping`)](#4-dynamic-import-mapping-columnmapping)
    * [Dynamic header translation on export (`FormatHeader`)](#5-header-translation-and-renaming-formatheader)
    * [Global on-the-fly field transformation (`TransformField`)](#6-global-on-the-fly-transformation-transformfield)
+   * [Dynamic export column ordering (`ColumnOrder`)](#7-dynamic-export-column-ordering-columnorder)
 9. [Advanced & Specialized Scenarios](#-advanced--specialized-scenarios)
    * [Massive database ingestion (`SqlBulkCopy` / `CreateDataReader`)](#1-massive-database-insertion-sqlbulkcopy)
    * [Complex objects & JSON lists AOT (`[CsvJson]`)](#2-complex-objects-and-json-lists-aot)
@@ -640,6 +641,40 @@ var options = new CsvWriterOptions
 };
 ```
 
+### 7. Dynamic export column ordering (`ColumnOrder`)
+
+Unlike `[CsvOrder]` which fixes column order at compile time, `CsvWriterOptions.ColumnOrder` lets users **dynamically choose the order (and subset) of exported columns at runtime**, with zero reflection and full Native AOT compatibility:
+
+```csharp
+using FlashCsv.Core;
+
+var customers = new[]
+{
+    new Customer { Id = 1, Name = "Alice", Balance = 1250.50 },
+    new Customer { Id = 2, Name = "Bob", Balance = 3400.00 }
+};
+
+// Reorder (or select a subset) by C# property name or [CsvName] alias (case-insensitive)
+var options = new CsvWriterOptions
+{
+    ColumnOrder = ["Balance", "name", "customer_id"]
+};
+
+string csv = FlashCsvSerializer.SerializeToString(customers, options);
+```
+
+**Produced CSV:**
+```txt
+balance,name,customer_id
+1250.5,Alice,1
+3400,Bob,2
+```
+
+> **Good to know:**
+> - Passing a subset (e.g. `["name", "balance"]`) exports only those selected columns in that exact order.
+> - Works seamlessly with flattened columns (`[CsvFlatten]`, e.g. `"shipping_city"`), `FormatHeader`, and `TransformField`.
+> - When `ColumnOrder` is `null` or empty, the default fast path runs with zero overhead.
+
 ---
 
 ## 🚀 Advanced & Specialized Scenarios
@@ -893,6 +928,7 @@ ms.Position = 0; // Rewind without ObjectDisposedException
 | `BufferSize` | `int` | `64 KB` | Buffer size before flushing to destination stream. |
 | `WriteBom` | `bool` | `false` | Emits UTF-8 BOM at file start for Microsoft Excel compatibility. |
 | `TransformField` | `Func<string, string, string>?` | `null` | Global transformation applied to cells before writing: `(columnName, rawValue) => modifiedValue`. |
+| `ColumnOrder` | `IReadOnlyList<string>?` | `null` | Ordered list of columns to export (C# property name or `[CsvName]` alias, case-insensitive). Dynamically controls column order and selection with zero reflection. |
 
 ---
 

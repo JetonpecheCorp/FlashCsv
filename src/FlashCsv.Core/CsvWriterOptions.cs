@@ -65,4 +65,11 @@ public sealed record CsvWriterOptions
     /// Signature : (nomOriginal) => nomTraduit.
     /// </summary>
     public Func<string, string>? FormatHeader { get; init; } = null;
+
+    /// <summary>
+    /// Liste ordonnée optionnelle des colonnes à exporter (par nom de propriété C# ou nom/alias CSV <c>[CsvName]</c>, insensible à la casse).
+    /// Permet de choisir dynamiquement l'ordre (et le sous-ensemble) des colonnes à l'export sans réflexion.
+    /// Si <see langword="null"/> ou vide, l'ordre statique par défaut (<c>[CsvOrder]</c> puis ordre de déclaration) est utilisé.
+    /// </summary>
+    public IReadOnlyList<string>? ColumnOrder { get; init; } = null;
 }

@@ -88,9 +88,25 @@ public static class FlashCsvSerializer
         options ??= new CsvWriterOptions();
         await using var writer = new CsvStreamWriter(stream, options, leaveOpen);
 
-        if (options.WriteHeader) await writer.WriteHeaderAsync(mapper.GetHeaderNames(), cancellationToken).ConfigureAwait(false);
+        if (options.ColumnOrder is { Count: > 0 } columnOrder)
+        {
+            int[] writeMap = mapper.CreateWriteColumnMap(columnOrder);
+            if (options.WriteHeader)
+            {
+                string[] allHeaders = mapper.GetHeaderNames();
+                string[] orderedHeaders = new string[writeMap.Length];
+                for (int i = 0; i < writeMap.Length; i++) orderedHeaders[i] = allHeaders[writeMap[i]];
+                await writer.WriteHeaderAsync(orderedHeaders, cancellationToken).ConfigureAwait(false);
+            }
 
-        foreach (var item in items) await mapper.SerializeAsync(writer, item, cancellationToken).ConfigureAwait(false);
+            foreach (var item in items) await mapper.SerializeAsync(writer, item, writeMap, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            if (options.WriteHeader) await writer.WriteHeaderAsync(mapper.GetHeaderNames(), cancellationToken).ConfigureAwait(false);
+
+            foreach (var item in items) await mapper.SerializeAsync(writer, item, cancellationToken).ConfigureAwait(false);
+        }
 
         await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -111,10 +127,27 @@ public static class FlashCsvSerializer
         options ??= new CsvWriterOptions();
         await using var writer = new CsvStreamWriter(stream, options, leaveOpen);
 
-        if (options.WriteHeader) await writer.WriteHeaderAsync(mapper.GetHeaderNames(), cancellationToken).ConfigureAwait(false);
+        if (options.ColumnOrder is { Count: > 0 } columnOrder)
+        {
+            int[] writeMap = mapper.CreateWriteColumnMap(columnOrder);
+            if (options.WriteHeader)
+            {
+                string[] allHeaders = mapper.GetHeaderNames();
+                string[] orderedHeaders = new string[writeMap.Length];
+                for (int i = 0; i < writeMap.Length; i++) orderedHeaders[i] = allHeaders[writeMap[i]];
+                await writer.WriteHeaderAsync(orderedHeaders, cancellationToken).ConfigureAwait(false);
+            }
 
-        await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
-            await mapper.SerializeAsync(writer, item, cancellationToken).ConfigureAwait(false);
+            await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
+                await mapper.SerializeAsync(writer, item, writeMap, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            if (options.WriteHeader) await writer.WriteHeaderAsync(mapper.GetHeaderNames(), cancellationToken).ConfigureAwait(false);
+
+            await foreach (var item in items.WithCancellation(cancellationToken).ConfigureAwait(false))
+                await mapper.SerializeAsync(writer, item, cancellationToken).ConfigureAwait(false);
+        }
 
         await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
     }

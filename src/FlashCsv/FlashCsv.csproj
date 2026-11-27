@@ -8,7 +8,7 @@
     
     <!-- Identité du package NuGet -->
     <PackageId>FlashCsv</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>jetonpeche</Authors>
     <Title>FlashCsv</Title>
     <Description>Ultra high-performance, zero-allocation CSV parser, streamer, and serializer for .NET. 100% Native AOT compatible with compile-time Roslyn Source Generators and SIMD acceleration.</Description>

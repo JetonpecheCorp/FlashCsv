@@ -29,7 +29,7 @@ public class CsvDataReaderTests
         var asyncEnumerable = FlashCsvSerializer.DeserializeAsync<DbPersonRecord>(stream);
 
         // 2. Wrap dans le DbDataReader
-        await using var reader = new CsvDataReader<DbPersonRecord>(asyncEnumerable);
+        await using var reader = FlashCsvSerializer.CreateDataReader(asyncEnumerable);
 
         // Vérification des métadonnées du schéma
         Assert.Equal(3, reader.FieldCount);

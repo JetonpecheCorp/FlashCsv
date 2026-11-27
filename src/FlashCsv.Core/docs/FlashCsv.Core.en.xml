@@ -294,6 +294,13 @@
         Optional global function allowing dynamic translation or formatting of header names during serialization: (originalName) => translatedName.
       </summary>
     </member>
+    <member name="P:FlashCsv.Core.CsvWriterOptions.ColumnOrder">
+      <summary>
+        Optional ordered list of columns to export (matching C# property names or [CsvName] aliases, case-insensitive).
+        Allows dynamically choosing column order (and subset) at export time with zero reflection.
+        If null or empty, the default compile-time order ([CsvOrder] then declaration order) is used.
+      </summary>
+    </member>
 
     <!-- ====================================================================== -->
     <!-- FlashCsv.Core.Enums and helpers                                        -->

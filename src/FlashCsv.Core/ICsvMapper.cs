@@ -13,6 +13,8 @@ public interface ICsvMapper<T>
     int[] CreateColumnMap(ReadOnlySpan<string> headers, IReadOnlyDictionary<string, string>? dynamicMapping = null);
     string[] GetHeaderNames();
     ValueTask SerializeAsync(CsvStreamWriter writer, T item, CancellationToken cancellationToken = default);
+    int[] CreateWriteColumnMap(IReadOnlyList<string> columnOrder);
+    ValueTask SerializeAsync(CsvStreamWriter writer, T item, int[] columnOrder, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

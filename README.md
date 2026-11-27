@@ -40,6 +40,7 @@
    * [Mapping dynamique d'import (`ColumnMapping`)](#4-mapping-dynamique-dimport-columnmapping)
    * [Traduction dynamique d'en-têtes à l'écriture (`FormatHeader`)](#5-traduction-et-renommage-des-en-têtes-formatheader)
    * [Transformation globale à la volée](#6-transformation-globale-à-la-volée-transformfield)
+   * [Choix dynamique de l'ordre des colonnes à l'export (`ColumnOrder`)](#7-choix-dynamique-de-lordre-des-colonnes-à-lexport-columnorder)
 9. [Cas d'usage Avancés & Spécialisés](#-cas-dusage-avancés--spécialisés)
    * [Insertion massive ultra-rapide en base (`SqlBulkCopy` / `CreateDataReader`)](#1-insertion-massive-en-base-de-données-sqlbulkcopy)
    * [Objets et listes d'objets en JSON AOT (`[CsvJson]`)](#2-objets-et-listes-dobjets-complexes-en-json-aot)
@@ -712,6 +713,40 @@ string csvAnonymise = FlashCsvSerializer.SerializeToString(clients, options);
 >Bon à savoir :  
 `TransformField` **s'exécute en premier** : FlashCsv applique automatiquement les guillemets et les sécurités anti-formule **après** votre transformation. Vous n'avez donc pas besoin d'échapper manuellement le texte renvoyé.
 
+### 7. Choix dynamique de l'ordre des colonnes à l'export (`ColumnOrder`)
+
+Contrairement à `[CsvOrder]` qui fixe l'ordre statiquement à la compilation, l'option `CsvWriterOptions.ColumnOrder` permet à l'utilisateur de **choisir dynamiquement l'ordre (et le sous-ensemble) des colonnes à l'exécution**, sans réflexion et 100 % compatible Native AOT :
+
+```csharp
+using FlashCsv.Core;
+
+var clients = new[]
+{
+    new Client { Id = 1, Nom = "Alice", Solde = 1250.50 },
+    new Client { Id = 2, Nom = "Bob", Solde = 3400.00 }
+};
+
+// Réordonne (ou sélectionne un sous-ensemble) par nom C# ou alias [CsvName] (insensible à la casse)
+var options = new CsvWriterOptions
+{
+    ColumnOrder = ["Solde", "nom", "id_client"]
+};
+
+string csv = FlashCsvSerializer.SerializeToString(clients, options);
+```
+
+**CSV produit :**
+```txt
+solde,nom,id_client
+1250.5,Alice,1
+3400,Bob,2
+```
+
+> **Bon à savoir :**
+> - Si `ColumnOrder` ne contient qu'un sous-ensemble de colonnes (ex. `["nom", "solde"]`), seules ces colonnes sont exportées.
+> - Fonctionne aussi avec les colonnes aplaties (`[CsvFlatten]`, ex. `"livraison_ville"`) et se combine directement avec `FormatHeader` et `TransformField`.
+> - Si `ColumnOrder` est `null` ou vide, le chemin rapide par défaut est exécuté sans aucun surcoût.
+
 ## Cas d'usage Avancés & Spécialisés
 
 ### 1. Insertion massive en Base de données (`SqlBulkCopy`)
@@ -1043,6 +1078,7 @@ public async Task Roundtrip_Memoire_ShouldPreserveData()
 | `BufferSize` | `int` | `64 Ko` | Taille du buffer tampon avant vidage (`Flush`) vers le flux de destination. |
 | `WriteBom` | `bool` | `false` | Écrit le BOM UTF-8 au début du fichier pour garantir la compatibilité des accents sous Microsoft Excel. |
 | `TransformField` | `Func<string, string, string>?` | `null` | Fonction globale de transformation appliquée aux cellules textuelles avant écriture : `(nomColonne, valeurSource) => valeurModifiée`. |
+| `ColumnOrder` | `IReadOnlyList<string>?` | `null` | Liste ordonnée des colonnes à exporter (nom C# ou alias `[CsvName]`, insensible à la casse). Permet de choisir dynamiquement l'ordre et le sous-ensemble de colonnes à l'export. |
 
 ## L'Exemple Ultime (All-in-One)
 
